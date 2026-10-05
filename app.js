@@ -7,7 +7,7 @@
  * 4. تصميم مالي أنيق وتفاعلي يدعم الأسهم المشتركة وإعادة ترتيب الأدوار.
  */
 
-const STORAGE_KEY = "gam3eyat_app_data_v3";
+const STORAGE_KEY = "gam3eyat_app_data_v3_2";
 
 let appState = {
   currentGamId: "gam1",
@@ -62,6 +62,13 @@ function generateRandomPin() {
 
 function loadData() {
   let data = null;
+
+  // تنظيف المفاتيح السابقة القديمة لضمان عدم بقاء أي بيانات غير محدثة
+  try {
+    const oldKeys = ["gam3eyat_app_data", "gam3eyat_app_data_v2", "gam3eyat_app_data_v2_5", "gam3eyat_app_data_v3"];
+    oldKeys.forEach(k => localStorage.removeItem(k));
+  } catch (e) {}
+
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
     try {
@@ -70,8 +77,24 @@ function loadData() {
       console.error("خطأ في قراءة البيانات المحفوظة", e);
     }
   }
-  if (!data || !data.gam3eyat || !Array.isArray(data.gam3eyat) || data.gam3eyat.length === 0) {
+
+  // فحص ذكي للترقية التلقائية: إذا كانت البيانات غير موجودة أو قديمة أو تفتقر للمشتركين الـ 19 المعتمدين
+  const targetVersion = (typeof INITIAL_DATA !== "undefined" && INITIAL_DATA.dataVersion) ? INITIAL_DATA.dataVersion : "2026.10.05_v3.2";
+  const needsInitialData = !data || 
+    !data.gam3eyat || 
+    !Array.isArray(data.gam3eyat) || 
+    data.gam3eyat.length === 0 ||
+    !data.dataVersion ||
+    data.dataVersion !== targetVersion ||
+    !data.registeredMembers ||
+    data.registeredMembers.length < 15;
+
+  if (needsInitialData) {
+    console.log("🔄 جاري تحديث بيانات التطبيق تلقائياً إلى النسخة المعتمدة بجميع المشتركين...");
     data = JSON.parse(JSON.stringify(INITIAL_DATA));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {}
   }
 
   // تنظيف تلقائي للبيانات وإزالة أي مشتركين وهميين

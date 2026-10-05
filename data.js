@@ -10,6 +10,7 @@ const INITIAL_DATA = {
     "seconds": 1791123559,
     "nanoseconds": 167000000
   },
+  "dataVersion": "2026.10.05_v3.2",
   "adminPin": "1234",
   "pinsSecuredV2": true,
   "registeredMembers": [
