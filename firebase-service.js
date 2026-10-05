@@ -437,6 +437,7 @@ const FirebaseService = {
 
     if (window.isFirebaseConfigured && window.isFirebaseConfigured() && typeof firebaseAuth !== "undefined") {
       try {
+        firebaseAuth.languageCode = "ar";
         await firebaseAuth.sendPasswordResetEmail(cleanEmail);
         return { success: true, method: "cloud" };
       } catch (err) {

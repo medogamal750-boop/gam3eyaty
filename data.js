@@ -10,7 +10,8 @@ const INITIAL_DATA = {
     "seconds": 1791123559,
     "nanoseconds": 167000000
   },
-  "dataVersion": "2026.10.05_v3.2",
+  "dataVersion": "2026.10.05_v3.8",
+  "publishedUrl": "https://gam3eyaty.netlify.app",
   "adminPin": "1234",
   "pinsSecuredV2": true,
   "registeredMembers": [
@@ -189,7 +190,7 @@ const INITIAL_DATA = {
   "gam3eyat": [
     {
       "name": "الجمعية الأولى (يناير - ديسمبر 2026)",
-      "currentMonthKey": "sep",
+      "currentMonthKey": "oct",
       "id": "gam1",
       "months": [
         {
@@ -1116,7 +1117,7 @@ const INITIAL_DATA = {
       "shareAmount": 2000
     },
     {
-      "currentMonthKey": "sep",
+      "currentMonthKey": "oct",
       "members": [
         {
           "codes": [

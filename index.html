@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3.2">
+  <link rel="stylesheet" href="style.css?v=4.1">
 </head>
 <body>
 
@@ -36,7 +36,7 @@
         </span>
         
         <!-- زر التبديل بين وضع المدير وبوابة المشتركين -->
-        <button id="btn-toggle-role" class="btn btn-light" title="بوابة المشتركين">
+        <button id="btn-toggle-role" class="btn btn-light" title="بوابة المشتركين" style="display: none;">
           👤 استعلام المشتركين
         </button>
 
@@ -44,8 +44,8 @@
           ☁️ مزامنة السحابة
         </button>
 
-        <button id="btn-admin-settings" class="btn btn-light" title="إعدادات المدير والرقم السري" style="display: none;">
-          ⚙️ إعدادات
+        <button id="btn-admin-settings" class="btn btn-light" title="لوحة التحكم والإعدادات" style="display: none;">
+          ⚙️ لوحة التحكم
         </button>
       </div>
     </div>
@@ -454,7 +454,6 @@
             <div class="stat-info">
               <h3>إجمالي استلام الجمعية</h3>
               <div class="stat-value" id="stat-total-payout">0 ر.س</div>
-              <div class="stat-subtitle" id="stat-members-count">0 مشترك</div>
             </div>
           </div>
 
@@ -463,7 +462,6 @@
             <div class="stat-info">
               <h3>مستحق القبض هذا الشهر</h3>
               <div class="stat-value" id="stat-current-receiver">-</div>
-              <div class="stat-subtitle" id="stat-receiver-date">موعد التسليم</div>
             </div>
           </div>
 
@@ -472,7 +470,6 @@
             <div class="stat-info">
               <h3>المحصل لشهر (<span id="stat-selected-month-name">--</span>)</h3>
               <div class="stat-value" id="stat-month-collected">0 ر.س</div>
-              <div class="stat-subtitle" id="stat-month-target">المطلوب: 0 ر.س</div>
             </div>
           </div>
 
@@ -480,8 +477,7 @@
             <div class="stat-icon amber">⏳</div>
             <div class="stat-info">
               <h3>المتأخرين عن السداد</h3>
-              <div class="stat-value" id="stat-unpaid-count">0</div>
-              <div class="stat-subtitle">بحاجة لمتابعة وتذكير</div>
+              <div class="stat-value"><span id="stat-unpaid-count">0</span> مشترك</div>
             </div>
           </div>
         </div>
@@ -503,20 +499,11 @@
           </div>
 
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <button id="btn-members-directory" class="btn btn-outline" style="color: #065f46; font-weight: 700;">
-              👥 دليل المشتركين وبيانات الدخول
-            </button>
             <button id="btn-edit-current-gam" class="btn btn-outline" style="color: var(--primary); font-weight: 700;">
               ✏️ تعديل الجمعية والأدوار
             </button>
             <button id="btn-open-whatsapp" class="btn btn-success">
               💬 تذكير المتأخرين (واتساب)
-            </button>
-            <button id="btn-archive-current-gam" class="btn btn-outline" style="color: #475569; font-weight: 700;" title="أرشفة هذه الجمعية ونقلها لقسم الجمعيات المكتملة">
-              📦 أرشفة الجمعية
-            </button>
-            <button id="btn-open-archives" class="btn btn-outline" style="color: #92400e; background: #fffbeb; border-color: #fde68a; font-weight: 700;" title="استعراض وإدارة الجمعيات المكتملة والمؤرشفة">
-              🗄️ الأرشيف (<span id="archive-count-badge">0</span>)
             </button>
           </div>
         </div>
@@ -602,16 +589,32 @@
       <!-- حالة 2: كشف حساب المشترك الموحد (بعد تسجيل الدخول) -->
       <div id="member-dashboard-section" class="member-unified-portfolio" style="display: none;">
         
-        <!-- كارت كشف الحساب الرسمي المعتمد الذي يظهر بوضوح في الشاشة والطباعة -->
+        <!-- ترويسة الطباعة الرسمية المعتمدة (تظهر فقط في الطباعة وتختفي تماماً في الشاشة) -->
+        <div class="official-print-header">
+          <div class="print-header-brand">
+            <div class="print-brand-badge">🏛️</div>
+            <div>
+              <h1 class="print-org-name">نظام إدارة الجمعيات المالية</h1>
+              <div class="print-doc-type">كشف حساب مالي رسمي معتمد ومطابقة أرصدة</div>
+            </div>
+          </div>
+          <div class="print-header-meta">
+            <div class="print-verified-stamp">✓ كشف معتمد ورسمي</div>
+            <div class="print-meta-row"><strong>تاريخ الإصدار:</strong> <span id="print-statement-date">--</span></div>
+            <div class="print-meta-row"><strong>كود العضو:</strong> <span id="print-statement-code">--</span></div>
+          </div>
+        </div>
+
+        <!-- كارت كشف الحساب الرسمي المعتمد الذي يظهر بوضوح في الشاشة -->
         <div class="official-statement-banner">
           <div class="statement-top-row">
             <div>
-              <div style="font-size: 0.85rem; color: #94a3b8; font-weight: 600;">نظام الجمعيات المالية المعتمد</div>
-              <h2 style="font-size: 1.5rem; color: #ffffff; font-weight: 800; margin-top: 0.2rem;">
-                📜 كشف حساب مالي موحد للمشترك
+              <div style="font-size: 0.82rem; color: #94a3b8; font-weight: 700;">نظام الجمعيات المالية المعتمد</div>
+              <h2 style="font-size: 1.45rem; color: #ffffff; font-weight: 800; margin-top: 0.2rem;">
+                📜 كشف الحساب المالي للمشترك
               </h2>
             </div>
-            <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
               <span class="statement-badge">
                 ✅ كشف رسمي معتمد
               </span>
@@ -629,33 +632,32 @@
 
           <!-- بيانات المشترك الأساسية -->
           <div class="statement-member-details">
-            <div>
-              <div class="detail-item-title">اسم المشترك المعني</div>
+            <div class="member-detail-box">
+              <div class="detail-item-title">اسم المشترك</div>
               <div class="detail-item-value" id="official-statement-name">--</div>
             </div>
-            <div>
-              <div class="detail-item-title">رقم الجوال المسجل</div>
+            <div class="member-detail-box">
+              <div class="detail-item-title">رقم الجوال</div>
               <div class="detail-item-value" id="official-statement-phone" style="direction: ltr; text-align: right;">--</div>
             </div>
-            <div>
-              <div class="detail-item-title">رقم كود المشترك</div>
+            <div class="member-detail-box">
+              <div class="detail-item-title">كود المشترك</div>
               <div class="detail-item-value" id="official-statement-code">--</div>
             </div>
-            <div>
-              <div class="detail-item-title">تاريخ إصدار الكشف</div>
+            <div class="member-detail-box">
+              <div class="detail-item-title">تاريخ التحديث</div>
               <div class="detail-item-value" id="official-statement-date">--</div>
             </div>
           </div>
         </div>
 
-        <!-- إحصائيات عامة للمشترك عبر كل الجمعيات -->
-        <div class="stats-grid" style="margin-bottom: 1.5rem;">
+        <!-- إحصائيات سريعة ومباشرة للمشترك عبر كل الجمعيات -->
+        <div class="stats-grid member-quick-stats" style="margin-bottom: 1.5rem;">
           <div class="stat-card emerald">
             <div class="stat-icon green">💵</div>
             <div class="stat-info">
-              <h3>إجمالي ما دفعته (كل الجمعيات)</h3>
+              <h3>إجمالي ما دفعته</h3>
               <div class="stat-value" id="member-stat-all-paid">0 ر.س</div>
-              <div class="stat-subtitle">مدفوعات مسددة بالفعل</div>
             </div>
           </div>
 
@@ -664,16 +666,14 @@
             <div class="stat-info">
               <h3>إجمالي المتبقي عليك</h3>
               <div class="stat-value" id="member-stat-all-remaining">0 ر.س</div>
-              <div class="stat-subtitle">التزامات حتى نهاية المدد</div>
             </div>
           </div>
 
-          <div class="stat-card blue">
-            <div class="stat-icon blue">📁</div>
+          <div class="stat-card blue" id="member-stat-current-month-card">
+            <div class="stat-icon blue" id="member-stat-current-icon">📅</div>
             <div class="stat-info">
-              <h3>الجمعيات المشارك بها</h3>
-              <div class="stat-value" id="member-stat-gam-count">0</div>
-              <div class="stat-subtitle">جمعيات نشطة حالياً</div>
+              <h3 id="member-stat-current-month-title">موقف الشهر الحالي</h3>
+              <div class="stat-value" id="member-stat-current-month-val" style="font-size: 1.35rem;">--</div>
             </div>
           </div>
         </div>
@@ -681,6 +681,24 @@
         <!-- حاوية كروت الجمعيات الخاصة بهذا العضو -->
         <div id="member-gam3eyat-container">
           <!-- يتم ملؤها ديناميكياً بكروت الجمعيات -->
+        </div>
+
+        <!-- تذييل الطباعة الرسمي المعتمد (يظهر فقط في الطباعة) -->
+        <div class="official-print-footer">
+          <div class="print-footer-notice">
+            <span>📌</span>
+            <span>ملاحظة: هذا الكشف صادر آلياً من نظام إدارة الجمعيات المالية ويعد وثيقة رسمية معتمدة لمطابقة الحسابات والالتزامات المالية بين الإدارة والمشترك حتى تاريخه.</span>
+          </div>
+          <div class="print-signatures-grid">
+            <div class="print-sig-col">
+              <div class="print-sig-label">اعتماد وتوقيع إدارة الجمعية</div>
+              <div class="print-sig-space">التوقيع / الختم: .......................................</div>
+            </div>
+            <div class="print-sig-col">
+              <div class="print-sig-label">توقيع واعتراف المشترك بالرصيد</div>
+              <div class="print-sig-space">التوقيع: .......................................</div>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -713,94 +731,78 @@
   </div>
 
   <!-- نافذة إعدادات المدير وتعديل بيانات الحساب والبريد -->
+  <!-- نافذة إعدادات حساب المدير (الملف الشخصي، كلمة المرور، وتسجيل الخروج) -->
   <div class="modal-overlay" id="modal-settings">
-    <div class="modal-card" style="max-width: 530px;">
+    <div class="modal-card" style="max-width: 440px;">
       <div class="modal-header">
         <div>
           <h3 style="color: #ffffff; display: flex; align-items: center; gap: 0.45rem;">
-            <span>⚙️</span> إعدادات حساب المدير
+            <span>⚙️</span> لوحة التحكم والإعدادات
           </h3>
-          <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.15rem;">
-            تعديل بريدك الإلكتروني الشخصي، كلمة المرور، وبيانات الدخول
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem;">
+            الملف الشخصي، بيانات المشتركين، وأرشيف الجمعيات
           </p>
         </div>
         <button class="close-btn" id="btn-close-settings">&times;</button>
       </div>
 
-      <div class="modal-scrollable-body">
-        <!-- 1. نموذج تعديل البريد الإلكتروني وبيانات الدخول الشخصية للمدير -->
-        <form id="form-manager-profile" style="margin-bottom: 1.5rem; padding-bottom: 1.25rem; border-bottom: 1px solid rgba(56, 189, 248, 0.2);">
-          <h4 style="font-size: 0.95rem; color: #00ff88; margin-bottom: 0.65rem; display: flex; align-items: center; gap: 0.4rem;">
-            <span>📧</span> البريد الإلكتروني الشخصي وكلمة المرور:
-          </h4>
-          
-          <div style="background: rgba(13, 27, 48, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 10px; padding: 0.75rem 0.9rem; margin-bottom: 1rem; font-size: 0.82rem; color: #cbd5e1; line-height: 1.55;">
-            💡 <strong>تخصيص حسابك الشخصي:</strong> اكتب هنا بريدك الإلكتروني الشخصي (مثل جيميل) وكلمة المرور الخاصة بك، لتسجيل الدخول بها دائماً بدلاً من الحساب التجريبي مع بقاء جميع جمعياتك الحالية محفوظة كما هي.
-          </div>
-
-          <div style="margin-bottom: 0.85rem;">
-            <label style="font-size: 0.85rem; font-weight: 700; color: #f8fafc; display: block; margin-bottom: 0.35rem;">اسم المدير / اللقب:</label>
-            <input type="text" id="mgr-profile-name" class="select-styled" style="width: 100%;" placeholder="مثال: محمد بن خالد" required>
-          </div>
-
-          <div style="margin-bottom: 0.85rem;">
-            <label style="font-size: 0.85rem; font-weight: 700; color: #f8fafc; display: block; margin-bottom: 0.35rem;">بريدك الإلكتروني الشخصي الجديد:</label>
-            <input type="email" id="mgr-profile-email" class="select-styled" style="width: 100%; direction: ltr; text-align: right;" placeholder="name@example.com" required>
-          </div>
-
-          <div style="margin-bottom: 0.85rem;">
-            <label style="font-size: 0.85rem; font-weight: 700; color: #f8fafc; display: block; margin-bottom: 0.35rem;">رقم الجوال (اختياري):</label>
-            <input type="tel" id="mgr-profile-phone" class="select-styled" style="width: 100%; direction: ltr; text-align: right;" placeholder="05xxxxxxxx">
-          </div>
-
-          <div style="margin-bottom: 1.15rem;">
-            <label style="font-size: 0.85rem; font-weight: 700; color: #f8fafc; display: block; margin-bottom: 0.35rem;">كلمة المرور الجديدة (لتسجيل الدخول بها):</label>
-            <input type="password" id="mgr-profile-password" class="select-styled" style="width: 100%;" placeholder="اتركها فارغة إذا كنت لا ترغب في تغييرها">
-          </div>
-
-          <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-            <button type="submit" class="btn btn-primary" style="flex: 1; font-weight: 800;">
-              💾 حفظ بريدي الشخصي وبيانات الحساب
-            </button>
-          </div>
-        </form>
-
-        <!-- 2. نموذج تغيير كود المشرف السري (PIN) -->
-        <form id="form-change-pin">
-          <h4 style="font-size: 0.95rem; color: #fbbf24; margin-bottom: 0.65rem; display: flex; align-items: center; gap: 0.4rem;">
-            <span>🔑</span> كود الوصول السري العام (PIN):
-          </h4>
-          <div style="margin-bottom: 0.75rem;">
-            <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 0.35rem;">الرقم السري الحالي:</label>
-            <input type="password" id="input-old-pin" class="select-styled" style="width: 100%;" required>
-          </div>
+      <div class="modal-scrollable-body" style="padding: 1.25rem;">
+        <form id="form-manager-profile">
+          <!-- 1. اسم المدير -->
           <div style="margin-bottom: 1rem;">
-            <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 0.35rem;">الرقم السري الجديد:</label>
-            <input type="password" id="input-new-pin" class="select-styled" style="width: 100%;" required>
+            <label style="font-size: 0.82rem; font-weight: 700; color: #e2e8f0; display: block; margin-bottom: 0.35rem;">👤 اسم المدير / اللقب:</label>
+            <input type="text" id="mgr-profile-name" class="select-styled" style="width: 100%;" placeholder="مثال: محمد جمال" required>
           </div>
-          <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-            <button type="submit" class="btn btn-gold" style="font-weight: 800;">حفظ كود PIN الجديد</button>
-            <button type="button" class="btn btn-outline" id="btn-close-settings-2">إغلاق</button>
+
+          <!-- 2. البريد الإلكتروني -->
+          <div style="margin-bottom: 1rem;">
+            <label style="font-size: 0.82rem; font-weight: 700; color: #e2e8f0; display: block; margin-bottom: 0.35rem;">✉️ البريد الإلكتروني:</label>
+            <input type="email" id="mgr-profile-email" class="select-styled" style="width: 100%; direction: ltr; text-align: left;" placeholder="name@example.com" required>
+          </div>
+
+          <!-- 3. تعديل كلمة المرور -->
+          <div style="margin-bottom: 1.25rem;">
+            <label style="font-size: 0.82rem; font-weight: 700; color: #e2e8f0; display: block; margin-bottom: 0.35rem;">🔒 تعديل كلمة المرور:</label>
+            <div style="position: relative;">
+              <input type="password" id="mgr-profile-password" class="select-styled" style="width: 100%; padding-left: 2.5rem;" placeholder="اكتب كلمة مرور جديدة (أو اتركها فارغة)" minlength="6">
+              <button type="button" id="btn-toggle-mgr-profile-pass" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #94a3b8; font-size: 1.1rem; padding: 0.2rem 0.4rem;" title="إظهار/إخفاء كلمة المرور">👁️</button>
+            </div>
+            <span style="font-size: 0.73rem; color: #94a3b8; margin-top: 0.35rem; display: block;">
+              💡 اترك الحقل فارغاً إذا كنت لا ترغب في تغيير كلمة المرور الحالية.
+            </span>
+          </div>
+
+          <!-- أزرار الحفظ والإلغاء المباشرة -->
+          <div style="display: flex; gap: 0.6rem; margin-bottom: 0.85rem;">
+            <button type="submit" class="btn btn-primary" style="flex: 2; font-weight: 800; padding: 0.65rem; font-size: 0.9rem;">
+              💾 حفظ التعديلات
+            </button>
+            <button type="button" class="btn btn-outline" id="btn-close-settings-2" style="flex: 1; padding: 0.65rem; font-size: 0.9rem;">
+              إلغاء
+            </button>
           </div>
         </form>
 
-        <!-- 3. قسم النسخ الاحتياطي واستعادة البيانات -->
-        <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid rgba(56, 189, 248, 0.2);">
-          <h4 style="font-size: 0.95rem; color: #38bdf8; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
-            <span>💾</span> النسخ الاحتياطي وحفظ البيانات:
-          </h4>
-          <p style="font-size: 0.8rem; color: #cbd5e1; margin-bottom: 1rem; line-height: 1.55;">
-            تصدير نسخة كاملة من الجمعيات وأرقام المشتركين وحركات السداد في ملف JSON على جهازك، أو استعادة نسخة سابقة في أي وقت بضغطة زر.
-          </p>
-          <div style="display: flex; gap: 0.65rem; flex-wrap: wrap;">
-            <button type="button" id="btn-export-backup" class="btn btn-gold" style="flex: 1; min-width: 190px; font-weight: 800; font-size: 0.84rem; padding: 0.65rem;">
-              📥 تصدير نسخة احتياطية (JSON)
-            </button>
-            <button type="button" id="btn-trigger-import-backup" class="btn btn-outline" style="flex: 1; min-width: 190px; font-weight: 800; font-size: 0.84rem; padding: 0.65rem; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4);">
-              📤 استعادة نسخة من ملف
-            </button>
-            <input type="file" id="input-import-backup" accept=".json" style="display: none;">
+        <!-- أدوات إدارية سريعة -->
+        <div style="border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 0.85rem; margin-top: 0.5rem; margin-bottom: 0.85rem;">
+          <div style="font-size: 0.82rem; font-weight: 700; color: #94a3b8; margin-bottom: 0.5rem;">
+            🛠️ أدوات إدارة النظام:
           </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button type="button" id="btn-members-directory" class="btn btn-outline" style="flex: 1; color: #34d399; border-color: rgba(52, 211, 153, 0.35); font-weight: 700; font-size: 0.82rem; padding: 0.55rem;">
+              👥 دليل المشتركين
+            </button>
+            <button type="button" id="btn-open-archives" class="btn btn-outline" style="flex: 1; color: #fbbf24; border-color: rgba(251, 191, 36, 0.35); font-weight: 700; font-size: 0.82rem; padding: 0.55rem;">
+              🗄️ الأرشيف (<span id="archive-count-badge">0</span>)
+            </button>
+          </div>
+        </div>
+
+        <!-- زر تسجيل الخروج الأحمر الواضح والمباشر -->
+        <div style="border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 0.85rem;">
+          <button type="button" id="btn-manager-logout" class="btn" style="width: 100%; background: linear-gradient(135deg, rgba(225, 29, 72, 0.9) 0%, rgba(244, 63, 94, 1) 100%); border: 1px solid #fda4af; color: #ffffff; font-weight: 800; font-size: 0.88rem; padding: 0.65rem; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 14px rgba(244, 63, 94, 0.35); transition: all 0.25s ease;">
+            🚪 تسجيل الخروج من الحساب
+          </button>
         </div>
       </div>
     </div>
@@ -1026,10 +1028,15 @@
         </table>
       </div>
 
-      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 1rem;">
-        <button type="button" id="btn-delete-gam" class="btn btn-outline" style="color: #b91c1c;">
-          🗑️ حذف هذه الجمعية بالكامل
-        </button>
+      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="button" id="btn-archive-current-gam" class="btn btn-outline" style="color: #475569; font-weight: 700;" title="أرشفة هذه الجمعية ونقلها لقسم الجمعيات المكتملة">
+            📦 أرشفة الجمعية
+          </button>
+          <button type="button" id="btn-delete-gam" class="btn btn-outline" style="color: #b91c1c;">
+            🗑️ حذف الجمعية
+          </button>
+        </div>
         <div style="display: flex; gap: 0.5rem;">
           <button type="button" id="btn-save-gam-settings" class="btn btn-primary">
             💾 حفظ التعديلات
@@ -1382,16 +1389,22 @@
       </div>
 
       <!-- شريط تنبيه الحساب النشط حالياً -->
-      <div id="mgr-active-status-bar" style="display: none; background: rgba(6, 78, 59, 0.4); border: 1px solid #00ff88; border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 1.25rem; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
-        <div style="font-size: 0.88rem; color: #f8fafc;">
-          🟢 <strong>الحساب النشط:</strong> <span id="mgr-active-status-name" style="color: #00ff88; font-weight: 800;">مدير مسجل</span>
+      <div id="mgr-active-status-bar" style="display: none; background: linear-gradient(135deg, rgba(6, 78, 59, 0.35), rgba(15, 23, 42, 0.7)); border: 1px solid rgba(0, 255, 136, 0.4); border-radius: 14px; padding: 1.25rem 1rem; margin-bottom: 1.25rem; text-align: center; flex-direction: column; gap: 0.85rem;">
+        <div style="font-size: 1.05rem; font-weight: 800; color: #f8fafc;">
+          🟢 أنت مسجل الدخول حالياً
         </div>
-        <div style="display: flex; gap: 0.4rem; align-items: center;">
-          <button type="button" id="btn-open-profile-from-auth" class="btn btn-sm btn-gold" style="font-size: 0.76rem; font-weight: 800;">
-            ✏️ تعديل البريد وكلمة المرور
+        <div style="font-size: 0.9rem; color: #94a3b8;">
+          الحساب النشط: <strong id="mgr-active-status-name" style="color: #00ff88; font-weight: 800;">مدير مسجل</strong>
+        </div>
+        <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-top: 0.35rem;">
+          <button type="button" id="btn-enter-dashboard-active" class="btn btn-sm btn-primary" style="font-size: 0.85rem; font-weight: 800; padding: 0.55rem 1.1rem;">
+            🚀 المتابعة للجمعيات
           </button>
-          <button type="button" id="btn-logout-current-mgr" class="btn btn-sm btn-outline" style="font-size: 0.76rem; color: #fca5a5; border-color: rgba(244, 63, 94, 0.4); padding: 0.3rem 0.65rem; font-weight: 800;">
-            🚪 خروج
+          <button type="button" id="btn-open-profile-from-auth" class="btn btn-sm btn-gold" style="font-size: 0.85rem; font-weight: 800; padding: 0.55rem 1.1rem;">
+            ⚙️ لوحة التحكم والإعدادات
+          </button>
+          <button type="button" id="btn-logout-current-mgr" class="btn btn-sm btn-outline" style="font-size: 0.85rem; color: #fca5a5; border-color: rgba(244, 63, 94, 0.4); padding: 0.55rem 1.1rem; font-weight: 800;">
+            🚪 تسجيل الخروج
           </button>
         </div>
       </div>
@@ -1487,49 +1500,56 @@
 
   <!-- نافذة استرجاع كلمة المرور (Forgot Password Modal) -->
   <div class="modal-overlay" id="modal-forgot-password">
-    <div class="modal-card" style="max-width: 450px;">
+    <div class="modal-card" style="max-width: 440px;">
       <div class="modal-header">
         <div>
-          <h3 style="color: var(--primary); display: flex; align-items: center; gap: 0.45rem;">
-            <span>🔑</span> استرجاع كلمة المرور
+          <h3 style="color: #ffffff; display: flex; align-items: center; gap: 0.45rem;">
+            <span>🔑</span> استعادة كلمة المرور
           </h3>
-          <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.15rem;">
-            اختر طريقة الاسترجاع الأنسب لك للدخول لحسابك
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem;">
+            إعادة تعيين كلمة المرور لحساب المدير
           </p>
         </div>
         <button class="close-btn" id="btn-close-forgot-pwd">&times;</button>
       </div>
 
       <div class="modal-scrollable-body" style="padding: 1.25rem;">
-        <!-- طريقة 1: إرسال رابط التعيين عبر البريد الإلكتروني -->
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; margin-bottom: 1.15rem;">
-          <h4 style="font-size: 0.9rem; color: #1e293b; margin-bottom: 0.4rem; font-weight: 800; display: flex; align-items: center; gap: 0.35rem;">
-            <span>📧</span> 1. إرسال رابط الاسترجاع للبريد:
-          </h4>
-          <p style="font-size: 0.78rem; color: #64748b; margin-bottom: 0.75rem; line-height: 1.5;">
-            أدخل بريدك الإلكتروني المسجل وسنرسل لك رابطاً مباشراً لتعيين كلمة مرور جديدة.
-          </p>
-          <input type="email" id="forgot-pwd-email" class="select-styled" style="width: 100%; direction: ltr; text-align: left; margin-bottom: 0.65rem;" placeholder="name@example.com">
-          <button type="button" id="btn-send-reset-email" class="btn btn-primary" style="width: 100%; font-size: 0.85rem; font-weight: 800; padding: 0.6rem;">
-            📩 إرسال رابط الاسترجاع للبريد
+        <!-- نموذج إرسال الرابط للبريد -->
+        <div id="section-reset-via-email">
+          <div style="margin-bottom: 1rem;">
+            <label style="font-size: 0.82rem; font-weight: 700; color: #e2e8f0; display: block; margin-bottom: 0.35rem;">✉️ البريد الإلكتروني المسجل:</label>
+            <input type="email" id="forgot-pwd-email" class="select-styled" style="width: 100%; direction: ltr; text-align: left;" placeholder="name@example.com" required>
+          </div>
+
+          <button type="button" id="btn-send-reset-email" class="btn btn-primary" style="width: 100%; font-size: 0.9rem; font-weight: 800; padding: 0.7rem; margin-bottom: 0.85rem;">
+            📩 إرسال رابط استعادة كلمة المرور
           </button>
+
+          <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 0.65rem 0.85rem; font-size: 0.76rem; color: #94a3b8; line-height: 1.5; margin-bottom: 0.5rem;">
+            💡 <strong style="color: #38bdf8;">تنبيه هام:</strong> يصل الرابط من جوجل (<span style="direction: ltr; display: inline-block;">noreply@gam3eyaty.firebaseapp.com</span>). إذا لم تجده في صندوق الوارد، يُرجى مراجعة مجلد <strong>الرسائل غير المرغوب فيها (Spam)</strong>.
+          </div>
         </div>
 
-        <!-- طريقة 2: الاسترجاع الفوري برمز المدير (Master PIN) -->
-        <div style="background: #fefce8; border: 1px solid #fde047; border-radius: 12px; padding: 1rem;">
-          <h4 style="font-size: 0.9rem; color: #854d0e; margin-bottom: 0.4rem; font-weight: 800; display: flex; align-items: center; gap: 0.35rem;">
-            <span>⚡</span> 2. تعيين فوري برمز المدير السري (PIN):
-          </h4>
-          <p style="font-size: 0.78rem; color: #a16207; margin-bottom: 0.75rem; line-height: 1.5;">
-            إذا كنت تحفظ رمز PIN للمدير (الافتراضي: 1234)، يمكنك كتابة كلمة مرور جديدة وتعيينها فوراً الآن بدون انتظار البريد.
-          </p>
-          <div style="margin-bottom: 0.65rem;">
-            <input type="password" id="forgot-pwd-pin" class="select-styled" style="width: 100%; margin-bottom: 0.5rem;" placeholder="رمز PIN للمدير (الافتراضي: 1234)">
-            <input type="password" id="forgot-pwd-new-pass" class="select-styled" style="width: 100%;" placeholder="كلمة المرور الجديدة (6 خانات فأكثر)">
-          </div>
-          <button type="button" id="btn-reset-with-pin" class="btn btn-gold" style="width: 100%; font-size: 0.85rem; font-weight: 800; padding: 0.6rem;">
-            🔓 حفظ وتعيين كلمة المرور الجديدة فوراً
+        <!-- رابط بديل أنيق للتعيين الفوري برمز PIN -->
+        <div style="border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 0.85rem; margin-top: 0.85rem; text-align: center;">
+          <button type="button" id="btn-toggle-pin-reset" style="background: none; border: none; color: #fbbf24; font-size: 0.8rem; font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0.25rem 0.5rem;">
+            ⚡ أو التعيين الفوري برمز PIN (بدون انتظار الإيميل)
           </button>
+
+          <!-- قسم التعيين بـ PIN (مخفي افتراضياً لعدم التشويش) -->
+          <div id="section-reset-via-pin" style="display: none; margin-top: 0.85rem; text-align: right; background: rgba(251, 191, 36, 0.07); border: 1px solid rgba(251, 191, 36, 0.25); border-radius: 10px; padding: 0.85rem;">
+            <div style="margin-bottom: 0.65rem;">
+              <label style="font-size: 0.8rem; font-weight: 700; color: #fbbf24; display: block; margin-bottom: 0.25rem;">رمز PIN للمدير:</label>
+              <input type="password" id="forgot-pwd-pin" class="select-styled" style="width: 100%; direction: ltr; text-align: left;" placeholder="الافتراضي: 1234">
+            </div>
+            <div style="margin-bottom: 0.75rem;">
+              <label style="font-size: 0.8rem; font-weight: 700; color: #e2e8f0; display: block; margin-bottom: 0.25rem;">كلمة المرور الجديدة:</label>
+              <input type="password" id="forgot-pwd-new-pass" class="select-styled" style="width: 100%;" placeholder="6 خانات أو أكثر">
+            </div>
+            <button type="button" id="btn-reset-with-pin" class="btn btn-gold" style="width: 100%; font-size: 0.86rem; font-weight: 800; padding: 0.65rem;">
+              🔓 حفظ وتعيين كلمة المرور فوراً
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1546,7 +1566,7 @@
   <script src="firebase-service.js"></script>
 
   <!-- ملفات بيانات ونظام التشغيل -->
-  <script src="data.js?v=3.2"></script>
-  <script src="app.js?v=3.2"></script>
+  <script src="data.js?v=4.1"></script>
+  <script src="app.js?v=4.1"></script>
 </body>
 </html>

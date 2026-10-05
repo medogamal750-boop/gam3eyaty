@@ -7,11 +7,107 @@
  * 4. تصميم مالي أنيق وتفاعلي يدعم الأسهم المشتركة وإعادة ترتيب الأدوار.
  */
 
-const STORAGE_KEY = "gam3eyat_app_data_v3_2";
+const STORAGE_KEY = "gam3eyat_app_data_v3_4";
+
+// الشهور القياسية الـ 12
+const ALL_MONTHS_DEF = [
+  { key: "jan", name: "يناير" },
+  { key: "feb", name: "فبراير" },
+  { key: "mar", name: "مارس" },
+  { key: "apr", name: "أبريل" },
+  { key: "may", name: "مايو" },
+  { key: "jun", name: "يونيو" },
+  { key: "jul", name: "يوليو" },
+  { key: "aug", name: "أغسطس" },
+  { key: "sep", name: "سبتمبر" },
+  { key: "oct", name: "أكتوبر" },
+  { key: "nov", name: "نوفمبر" },
+  { key: "dec", name: "ديسمبر" }
+];
+
+/**
+ * دالة ذكية لتحديد الشهر الفعلي الحالي تلقائياً بناءً على تاريخ اليوم الفعلي
+ * تضمن فتح النظام دائماً على الشهر الجاري (أكتوبر 2026 حالياً، ثم نوفمبر، وهكذا)
+ */
+function getSmartCurrentMonthKey(gam) {
+  if (!gam || !Array.isArray(gam.months) || gam.months.length === 0) {
+    return "oct";
+  }
+
+  const now = new Date();
+  const curMonthIndex = now.getMonth(); // 0 = يناير, 9 = أكتوبر, إلخ
+  const curYear = now.getFullYear(); // e.g. 2026
+  const targetKeyPrefix = ALL_MONTHS_DEF[curMonthIndex] ? ALL_MONTHS_DEF[curMonthIndex].key : "oct";
+  const targetArabicName = ALL_MONTHS_DEF[curMonthIndex] ? ALL_MONTHS_DEF[curMonthIndex].name : "أكتوبر";
+
+  // 1. أولاً: البحث عن شهر في الجمعية يطابق الشهر الحالي والسنة الحالية بدقة (مثل oct_2026 أو oct في جمعية 2026)
+  const exactMatch = gam.months.find(m => {
+    const k = (m.key || "").toLowerCase();
+    const n = m.name || "";
+    if (k === `${targetKeyPrefix}_${curYear}`) return true;
+    if (k === targetKeyPrefix) {
+      if (n.includes(String(curYear)) || (gam.name && gam.name.includes(String(curYear))) || !n.match(/\d{4}/)) {
+        return true;
+      }
+    }
+    if (n.includes(targetArabicName) && n.includes(String(curYear))) {
+      return true;
+    }
+    return false;
+  });
+
+  if (exactMatch) {
+    return exactMatch.key;
+  }
+
+  // 2. ثانياً: مطابقة اسم الشهر الحالي أو بادئة المفتاح
+  const monthMatch = gam.months.find(m => {
+    const k = (m.key || "").toLowerCase();
+    const n = m.name || "";
+    return k === targetKeyPrefix || k.startsWith(targetKeyPrefix + "_") || n.includes(targetArabicName);
+  });
+
+  if (monthMatch) {
+    return monthMatch.key;
+  }
+
+  // 3. ثالثاً: إذا كانت الجمعية منتهية في الماضي أو مستقبلية لم تبدأ بعد:
+  if (gam.currentMonthKey && gam.months.some(m => m.key === gam.currentMonthKey)) {
+    return gam.currentMonthKey;
+  }
+
+  return gam.months[0].key;
+}
+
+/**
+ * مزامنة حالات السداد مع الشهر المعروض الحالي
+ * تحويل الشهور حتى الشهر الحالي من "future" إلى "unpaid" دون المساس بأي مدفوعات مسجلة (paid أو payout)
+ */
+function syncMonthPaymentStatuses(gam, monthKey) {
+  if (!gam || !gam.months || !gam.members) return;
+  const curMonthIdx = gam.months.findIndex(mo => mo.key === monthKey);
+  if (curMonthIdx === -1) return;
+
+  gam.currentMonthKey = monthKey;
+
+  gam.members.forEach(m => {
+    if (m.payments) {
+      gam.months.forEach((mo, mIdx) => {
+        if (m.payments[mo.key]) {
+          m.payments[mo.key] = m.payments[mo.key].map(st => {
+            if (mIdx <= curMonthIdx && st === "future") return "unpaid";
+            if (mIdx > curMonthIdx && st === "unpaid") return "future";
+            return st;
+          });
+        }
+      });
+    }
+  });
+}
 
 let appState = {
   currentGamId: "gam1",
-  currentMonthKey: "sep",
+  currentMonthKey: "oct",
   currentRole: "landing", // "landing" افتراضي للزوار، "admin" للمدير، "member" للمشترك
   isAdminAuthenticated: false,
   loggedMember: null, // المشترك الحالي
@@ -32,24 +128,9 @@ window.setAppData = setAppData;
 
 if (appData.gam3eyat && appData.gam3eyat[0]) {
   appState.currentGamId = appData.gam3eyat[0].id;
-  appState.currentMonthKey = appData.gam3eyat[0].currentMonthKey || (appData.gam3eyat[0].months[0] && appData.gam3eyat[0].months[0].key) || "sep";
+  appState.currentMonthKey = getSmartCurrentMonthKey(appData.gam3eyat[0]);
+  syncMonthPaymentStatuses(appData.gam3eyat[0], appState.currentMonthKey);
 }
-
-// الشهور القياسية
-const ALL_MONTHS_DEF = [
-  { key: "jan", name: "يناير" },
-  { key: "feb", name: "فبراير" },
-  { key: "mar", name: "مارس" },
-  { key: "apr", name: "أبريل" },
-  { key: "may", name: "مايو" },
-  { key: "jun", name: "يونيو" },
-  { key: "jul", name: "يوليو" },
-  { key: "aug", name: "أغسطس" },
-  { key: "sep", name: "سبتمبر" },
-  { key: "oct", name: "أكتوبر" },
-  { key: "nov", name: "نوفمبر" },
-  { key: "dec", name: "ديسمبر" }
-];
 
 // توليد كود سري عشوائي فريد مكون من 4 أرقام
 function generateRandomPin() {
@@ -65,7 +146,7 @@ function loadData() {
 
   // تنظيف المفاتيح السابقة القديمة لضمان عدم بقاء أي بيانات غير محدثة
   try {
-    const oldKeys = ["gam3eyat_app_data", "gam3eyat_app_data_v2", "gam3eyat_app_data_v2_5", "gam3eyat_app_data_v3"];
+    const oldKeys = ["gam3eyat_app_data", "gam3eyat_app_data_v2", "gam3eyat_app_data_v2_5", "gam3eyat_app_data_v3", "gam3eyat_app_data_v3_2", "gam3eyat_app_data_v3_3"];
     oldKeys.forEach(k => localStorage.removeItem(k));
   } catch (e) {}
 
@@ -79,7 +160,7 @@ function loadData() {
   }
 
   // فحص ذكي للترقية التلقائية: إذا كانت البيانات غير موجودة أو قديمة أو تفتقر للمشتركين الـ 19 المعتمدين
-  const targetVersion = (typeof INITIAL_DATA !== "undefined" && INITIAL_DATA.dataVersion) ? INITIAL_DATA.dataVersion : "2026.10.05_v3.2";
+  const targetVersion = (typeof INITIAL_DATA !== "undefined" && INITIAL_DATA.dataVersion) ? INITIAL_DATA.dataVersion : "2026.10.05_v3.4";
   const needsInitialData = !data || 
     !data.gam3eyat || 
     !Array.isArray(data.gam3eyat) || 
@@ -256,13 +337,39 @@ document.addEventListener("DOMContentLoaded", async () => {
       const publicSnap = await firebaseDb.collection("public_data").doc("active_statement").get();
       if (publicSnap.exists) {
         const cData = publicSnap.data();
-        if (cData && Array.isArray(cData.gam3eyat) && cData.gam3eyat.length > 0) {
+        const targetVer = (typeof INITIAL_DATA !== "undefined" && INITIAL_DATA.dataVersion) ? INITIAL_DATA.dataVersion : "2026.10.05_v3.4";
+        const isCloudValid = cData &&
+                             Array.isArray(cData.gam3eyat) &&
+                             cData.gam3eyat.length > 0 &&
+                             cData.dataVersion === targetVer &&
+                             Array.isArray(cData.registeredMembers) &&
+                             cData.registeredMembers.length >= 15;
+
+        if (isCloudValid) {
           setAppData(cData);
           if (appData.gam3eyat && appData.gam3eyat[0]) {
-            appState.currentGamId = appData.gam3eyat[0].id;
-            appState.currentMonthKey = appData.gam3eyat[0].currentMonthKey || (appData.gam3eyat[0].months[0] && appData.gam3eyat[0].months[0].key);
+            const activeGam = appData.gam3eyat.find(g => g.id === appState.currentGamId) || appData.gam3eyat[0];
+            appState.currentGamId = activeGam.id;
+            appState.currentMonthKey = getSmartCurrentMonthKey(activeGam);
+            syncMonthPaymentStatuses(activeGam, appState.currentMonthKey);
+          }
+        } else {
+          console.warn("⚠️ تم اكتشاف بيانات سحابية عامة قديمة، جاري تحديث السحابة تلقائياً بالنسخة المعتمدة بجميع المشتركين...");
+          try {
+            const freshPayload = JSON.parse(JSON.stringify(INITIAL_DATA));
+            freshPayload.lastUpdated = firebase.firestore.FieldValue.serverTimestamp();
+            await firebaseDb.collection("public_data").doc("active_statement").set(freshPayload, { merge: true });
+          } catch(syncErr) {
+            console.warn("تعذر كتابة البيانات المحدثة في السحابة العامة:", syncErr);
           }
         }
+      } else {
+        // إنشاء المستند السحابي العام فوراً بالنسخة المعتمدة
+        try {
+          const freshPayload = JSON.parse(JSON.stringify(INITIAL_DATA));
+          freshPayload.lastUpdated = firebase.firestore.FieldValue.serverTimestamp();
+          await firebaseDb.collection("public_data").doc("active_statement").set(freshPayload, { merge: true });
+        } catch(initErr) {}
       }
     } catch (e) {
       console.warn("Public cloud data fetch notice:", e);
@@ -319,9 +426,11 @@ async function checkMagicLink() {
     }
   } catch(e) {}
 
-  if (isPortalRequested && !appState.currentManager) {
+  if (isPortalRequested) {
     appState.currentRole = "member";
-    appState.loggedMember = null;
+    if (!authPin) {
+      appState.loggedMember = null;
+    }
   }
 
   // ملء الحقول تلقائياً في شاشة تسجيل دخول المشترك
@@ -523,7 +632,8 @@ function renderGamTabs() {
   // إذا كانت الجمعية الحالية مؤرشفة أو غير موجودة، ننتقل لأول جمعية نشطة
   if (activeGams.length > 0 && !activeGams.some(g => g.id === appState.currentGamId)) {
     appState.currentGamId = activeGams[0].id;
-    appState.currentMonthKey = activeGams[0].currentMonthKey || (activeGams[0].months[0] && activeGams[0].months[0].key);
+    appState.currentMonthKey = getSmartCurrentMonthKey(activeGams[0]);
+    syncMonthPaymentStatuses(activeGams[0], appState.currentMonthKey);
   }
 
   activeGams.forEach(gam => {
@@ -532,7 +642,8 @@ function renderGamTabs() {
     btn.innerHTML = `<span>📁</span> ${gam.name}`;
     btn.onclick = () => {
       appState.currentGamId = gam.id;
-      appState.currentMonthKey = gam.currentMonthKey || (gam.months[0] && gam.months[0].key);
+      appState.currentMonthKey = getSmartCurrentMonthKey(gam);
+      syncMonthPaymentStatuses(gam, appState.currentMonthKey);
       appState.currentRole = "admin";
       appState.isAdminAuthenticated = true;
       renderGamTabs();
@@ -568,7 +679,8 @@ function archiveCurrentGam() {
     const remainingActive = appData.gam3eyat.filter(g => !g.isArchived);
     if (remainingActive.length > 0) {
       appState.currentGamId = remainingActive[0].id;
-      appState.currentMonthKey = remainingActive[0].currentMonthKey || remainingActive[0].months[0].key;
+      appState.currentMonthKey = getSmartCurrentMonthKey(remainingActive[0]);
+      syncMonthPaymentStatuses(remainingActive[0], appState.currentMonthKey);
     }
 
     renderGamTabs();
@@ -635,7 +747,8 @@ window.restoreArchivedGam = function(gamId) {
   saveData(appData);
 
   appState.currentGamId = gam.id;
-  appState.currentMonthKey = gam.currentMonthKey || gam.months[0].key;
+  appState.currentMonthKey = getSmartCurrentMonthKey(gam);
+  syncMonthPaymentStatuses(gam, appState.currentMonthKey);
 
   renderGamTabs();
   setupMonthSelector();
@@ -669,9 +782,11 @@ function setupMonthSelector() {
     opt.textContent = m.name;
     if (m.key === appState.currentMonthKey) {
       opt.selected = true;
+      opt.setAttribute("selected", "selected");
     }
     select.appendChild(opt);
   });
+  select.value = appState.currentMonthKey;
 }
 
 // ==========================================
@@ -717,16 +832,18 @@ function updateView() {
     if (gamTabsContainer) gamTabsContainer.style.display = "flex";
 
     if (roleBadge) {
-      roleBadge.style.display = "inline-flex";
-      roleBadge.className = "role-badge role-admin";
-      roleBadge.innerHTML = "🛡️ وضع المدير";
+      roleBadge.style.display = "none";
     }
     if (toggleBtn) {
-      toggleBtn.style.display = "inline-flex";
-      toggleBtn.innerHTML = "👥 الانتقال لبوابة المشترك";
+      toggleBtn.style.display = "none";
     }
-    if (settingsBtn) settingsBtn.style.display = "inline-flex";
-    if (cloudSyncBtn) cloudSyncBtn.style.display = "inline-flex";
+    if (settingsBtn) {
+      settingsBtn.style.display = "inline-flex";
+      settingsBtn.innerHTML = "⚙️ لوحة التحكم";
+    }
+    if (cloudSyncBtn) {
+      cloudSyncBtn.style.display = "none";
+    }
 
     renderGamTabs();
     renderAdminDashboard();
@@ -778,28 +895,32 @@ function renderAdminDashboard() {
 
   if (!gam) {
     const el1 = document.getElementById("stat-total-payout"); if (el1) el1.textContent = `0 ${curCurrency}`;
-    const el2 = document.getElementById("stat-members-count"); if (el2) el2.textContent = "0 دور (0 شهر)";
+    const el2 = document.getElementById("stat-members-count"); if (el2) el2.textContent = "";
     const el3 = document.getElementById("stat-current-receiver"); if (el3) el3.textContent = "لا يوجد";
-    const el4 = document.getElementById("stat-receiver-date"); if (el4) el4.textContent = "-";
+    const el4 = document.getElementById("stat-receiver-date"); if (el4) el4.textContent = "";
     const el5 = document.getElementById("stat-selected-month-name"); if (el5) el5.textContent = "--";
     const el6 = document.getElementById("stat-month-collected"); if (el6) el6.textContent = `0 ${curCurrency}`;
-    const el7 = document.getElementById("stat-month-target"); if (el7) el7.textContent = `المطلوب: 0 ${curCurrency}`;
+    const el7 = document.getElementById("stat-month-target"); if (el7) el7.textContent = "";
     const el8 = document.getElementById("stat-unpaid-count"); if (el8) el8.textContent = "0";
     return;
   }
   const monthKey = appState.currentMonthKey;
   const monthObj = gam.months.find(m => m.key === monthKey) || gam.months[0];
 
-  document.getElementById("stat-total-payout").textContent = `${gam.totalPayout.toLocaleString()} ${curCurrency}`;
-  document.getElementById("stat-members-count").textContent = `${gam.members.length} دور (${gam.months.length} شهر)`;
+  const elPayout = document.getElementById("stat-total-payout");
+  if (elPayout) elPayout.textContent = `${gam.totalPayout.toLocaleString()} ${curCurrency}`;
+  const elCount = document.getElementById("stat-members-count");
+  if (elCount) elCount.textContent = "";
 
   const receiverMember = gam.members.find(m => m.turnMonth === monthKey);
+  const elReceiver = document.getElementById("stat-current-receiver");
+  const elReceiverDate = document.getElementById("stat-receiver-date");
   if (receiverMember) {
-    document.getElementById("stat-current-receiver").textContent = receiverMember.names.join(" + ");
-    document.getElementById("stat-receiver-date").textContent = receiverMember.payoutDate || `شهر ${monthObj.name}`;
+    if (elReceiver) elReceiver.textContent = receiverMember.names.join(" + ");
+    if (elReceiverDate) elReceiverDate.textContent = "";
   } else {
-    document.getElementById("stat-current-receiver").textContent = "لا يوجد";
-    document.getElementById("stat-receiver-date").textContent = "-";
+    if (elReceiver) elReceiver.textContent = "لا يوجد";
+    if (elReceiverDate) elReceiverDate.textContent = "";
   }
 
   let collected = 0;
@@ -822,10 +943,14 @@ function renderAdminDashboard() {
     });
   });
 
-  document.getElementById("stat-selected-month-name").textContent = monthObj.name;
-  document.getElementById("stat-month-collected").textContent = `${collected.toLocaleString()} ${curCurrency}`;
-  document.getElementById("stat-month-target").textContent = `المطلوب: ${target.toLocaleString()} ${curCurrency}`;
-  document.getElementById("stat-unpaid-count").textContent = unpaidCount;
+  const elMonthName = document.getElementById("stat-selected-month-name");
+  if (elMonthName) elMonthName.textContent = monthObj.name;
+  const elCollected = document.getElementById("stat-month-collected");
+  if (elCollected) elCollected.textContent = `${collected.toLocaleString()} ${curCurrency}`;
+  const elTarget = document.getElementById("stat-month-target");
+  if (elTarget) elTarget.textContent = "";
+  const elUnpaid = document.getElementById("stat-unpaid-count");
+  if (elUnpaid) elUnpaid.textContent = unpaidCount;
 }
 
 // ==========================================
@@ -873,13 +998,27 @@ function renderMatrixTable() {
     if (member.isVacant) {
       nameHtml = `<span class="slot-vacant" onclick="openAssignTurnModal(${index})" title="انقر لتسكين المشترك في هذا الدور"><span class="vacant-pulse">🟢</span> دور متاح (انقر للتسكين)</span>`;
     } else if (member.isShared) {
+      const p1Enc = encodeURIComponent(member.names[0] || "");
+      const p2Enc = encodeURIComponent(member.names[1] || "");
       nameHtml = `
-        <div style="font-weight: 700; color: var(--text-dark);">${member.names[0]} <span style="font-size: 0.74rem; color: #94a3b8; font-weight: 600;">(${(member.shares[0] || (gam.shareAmount / 2)).toLocaleString()})</span></div>
-        <div style="margin-top: 3px; font-weight: 700; color: var(--text-dark);">${member.names[1]} <span style="font-size: 0.74rem; color: #94a3b8; font-weight: 600;">(${(member.shares[1] || (gam.shareAmount / 2)).toLocaleString()})</span></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.35rem;">
+          <div style="font-weight: 700; color: var(--text-dark);">${member.names[0]} <span style="font-size: 0.74rem; color: #94a3b8; font-weight: 600;">(${(member.shares[0] || (gam.shareAmount / 2)).toLocaleString()})</span></div>
+          <button type="button" class="btn-statement-mini" onclick="openDirectMemberStatement('${p1Enc}')" title="عرض كشف حساب ${member.names[0]}">📜</button>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.35rem; margin-top: 3px;">
+          <div style="font-weight: 700; color: var(--text-dark);">${member.names[1]} <span style="font-size: 0.74rem; color: #94a3b8; font-weight: 600;">(${(member.shares[1] || (gam.shareAmount / 2)).toLocaleString()})</span></div>
+          <button type="button" class="btn-statement-mini" onclick="openDirectMemberStatement('${p2Enc}')" title="عرض كشف حساب ${member.names[1]}">📜</button>
+        </div>
         <span class="co-member-badge">🤝 شريكان بالسهم</span>
       `;
     } else {
-      nameHtml = `<div><strong>${member.names[0]}</strong></div>`;
+      const pEnc = encodeURIComponent(member.names[0] || "");
+      nameHtml = `
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.4rem;">
+          <div><strong>${member.names[0]}</strong></div>
+          <button type="button" class="btn-statement-mini" onclick="openDirectMemberStatement('${pEnc}')" title="عرض كشف حساب ${member.names[0]}">📜</button>
+        </div>
+      `;
     }
 
     const payoutMonthName = gam.months[index] ? gam.months[index].name : (member.payoutDate || '-');
@@ -1005,6 +1144,49 @@ window.cyclePaymentStatus = function(memberId, monthKey, subIndex) {
   renderAdminDashboard();
   renderMatrixTable();
   showToast("تم تحديث حالة السداد بنجاح 🔄");
+};
+
+/**
+ * فتح كشف الحساب المعتمد للمشترك مباشرة بنقرة زر واحدة (خاص بالمدير)
+ */
+window.openDirectMemberStatement = function(rawName) {
+  const memberName = decodeURIComponent(rawName || "").trim();
+  if (!memberName) return;
+
+  // إغلاق أي نوافذ منبثقة إن كانت مفتوحة
+  closeModal("modal-members-directory");
+  closeModal("modal-settings");
+
+  const participants = getAllUniqueParticipants();
+  let matched = participants.find(p => (p.name || "").trim() === memberName);
+  if (!matched) {
+    const gam = getCurrentGam();
+    if (gam) {
+      const m = gam.members.find(x => x.names && x.names.some(n => (n || "").trim() === memberName));
+      if (m) {
+        const idx = m.names.findIndex(n => (n || "").trim() === memberName);
+        matched = {
+          name: memberName,
+          phone: (m.phones && m.phones[idx]) || "",
+          code: (m.codes && m.codes[idx]) || "101",
+          pin: (m.pins && m.pins[idx]) || "1234",
+          payoutMethod: (m.payoutMethods && m.payoutMethods[idx]) || "bank",
+          bankName: (m.bankNames && m.bankNames[idx]) || "",
+          iban: (m.ibans && m.ibans[idx]) || ""
+        };
+      }
+    }
+  }
+
+  if (matched) {
+    appState.loggedMember = matched;
+    appState.currentRole = "member";
+    updateView();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    showToast(`تم فتح كشف حساب المشترك "${matched.name}" بنجاح 📜`);
+  } else {
+    alert(`تعذر العثور على سجلات المشترك "${memberName}"!`);
+  }
 };
 
 // ==========================================
@@ -1213,13 +1395,20 @@ async function handleMemberLogin(identifierInput, pinInput) {
     }
   }
 
-  // 2. جلب أحدث بيانات الجمعيات العامة من السحابة لضمان التحديث اللحظي
+  // 2. جلب أحدث بيانات الجمعيات العامة من السحابة لضمان التحديث اللحظي (فقط إذا كانت النسخة معتمدة ومطابقة)
   if (typeof FirebaseService !== "undefined" && window.isFirebaseConfigured && window.isFirebaseConfigured() && typeof firebaseDb !== "undefined") {
     try {
       const publicSnap = await firebaseDb.collection("public_data").doc("active_statement").get();
       if (publicSnap.exists) {
         const cloudData = publicSnap.data();
-        if (cloudData && Array.isArray(cloudData.gam3eyat) && cloudData.gam3eyat.length > 0) {
+        const targetVer = (typeof INITIAL_DATA !== "undefined" && INITIAL_DATA.dataVersion) ? INITIAL_DATA.dataVersion : "2026.10.05_v3.4";
+        const isCloudValid = cloudData && 
+                             Array.isArray(cloudData.gam3eyat) && 
+                             cloudData.gam3eyat.length > 0 &&
+                             cloudData.dataVersion === targetVer &&
+                             Array.isArray(cloudData.registeredMembers) &&
+                             cloudData.registeredMembers.length >= 15;
+        if (isCloudValid) {
           appData = cloudData;
         }
       }
@@ -1315,6 +1504,25 @@ function renderMemberPortfolio() {
   const formattedDate = `${today.getDate()} ${arabicMonths[today.getMonth()]} ${today.getFullYear()}`;
   document.getElementById("official-statement-date").textContent = formattedDate;
 
+  // تعبئة بيانات ترويسة الطباعة الرسمية
+  const printDateEl = document.getElementById("print-statement-date");
+  if (printDateEl) printDateEl.textContent = formattedDate;
+  const printCodeEl = document.getElementById("print-statement-code");
+  if (printCodeEl) printCodeEl.textContent = `#MEM-${member.code || member.pin}`;
+
+  const logoutBtn = document.getElementById("btn-member-logout");
+  if (logoutBtn) {
+    if (appState.currentManager || appState.isAdminAuthenticated) {
+      logoutBtn.innerHTML = "🔙 العودة لإدارة الجمعيات";
+      logoutBtn.className = "btn btn-primary btn-sm no-print";
+      logoutBtn.title = "العودة إلى لوحة تحكم إدارة الجمعيات";
+    } else {
+      logoutBtn.innerHTML = "🚪 خروج";
+      logoutBtn.className = "btn btn-light btn-sm no-print";
+      logoutBtn.title = "تسجيل الخروج";
+    }
+  }
+
   // 2. تجميع وحساب بيانات الجمعيات التي يشارك بها
   const memberGamEntries = [];
   let totalAllPaid = 0;
@@ -1360,17 +1568,70 @@ function renderMemberPortfolio() {
   });
 
   const curCurrency = appData.currency || "ر.س";
-  // تحديث الإحصائيات الشاملة
+  // تحديث إجمالي المدفوع والمتبقي
   document.getElementById("member-stat-all-paid").textContent = `${totalAllPaid.toLocaleString()} ${curCurrency}`;
   document.getElementById("member-stat-all-remaining").textContent = `${totalAllRemaining.toLocaleString()} ${curCurrency}`;
-  document.getElementById("member-stat-gam-count").textContent = memberGamEntries.length;
+
+  // حساب الموقف المالي لشهر اليوم الحالي للمشترك عبر جميع جمعياته
+  let curMonthDueAmount = 0;
+  let curMonthPaidCount = 0;
+  let curMonthPayoutCount = 0;
+  let curMonthPayoutTotal = 0;
+  const curArabicMonthName = arabicMonths[today.getMonth()];
+
+  memberGamEntries.forEach(entry => {
+    const gam = entry.gam;
+    const m = entry.memberRecord;
+    const subIdx = entry.subIndex;
+    const myShare = entry.myShare;
+    const curMonthKey = getSmartCurrentMonthKey(gam);
+    const curStatuses = m.payments[curMonthKey] || ["unpaid"];
+    const st = curStatuses[subIdx] || "unpaid";
+
+    if (st === "unpaid") {
+      curMonthDueAmount += myShare;
+    } else if (st === "paid") {
+      curMonthPaidCount++;
+    } else if (st === "payout") {
+      curMonthPayoutCount++;
+      curMonthPayoutTotal += entry.payoutAmount;
+    }
+  });
+
+  // تحديث بطاقة موقف الشهر الحالي (بدون كلام حشو)
+  const monthCard = document.getElementById("member-stat-current-month-card");
+  const monthTitle = document.getElementById("member-stat-current-month-title");
+  const monthVal = document.getElementById("member-stat-current-month-val");
+  const monthIcon = document.getElementById("member-stat-current-icon");
+
+  if (monthTitle) monthTitle.textContent = `موقف شهر (${curArabicMonthName})`;
+
+  if (monthVal) {
+    if (curMonthDueAmount > 0) {
+      monthVal.innerHTML = `<span style="color: #f43f5e; font-weight: 800;">⚠️ مطلوب: ${curMonthDueAmount.toLocaleString()} ${curCurrency}</span>`;
+      if (monthCard) monthCard.className = "stat-card rose";
+      if (monthIcon) { monthIcon.className = "stat-icon rose"; monthIcon.textContent = "⚠️"; }
+    } else if (curMonthPayoutCount > 0) {
+      monthVal.innerHTML = `<span style="color: #10b981; font-weight: 800;">🎁 شهر قبضك (+${curMonthPayoutTotal.toLocaleString()} ${curCurrency})</span>`;
+      if (monthCard) monthCard.className = "stat-card emerald";
+      if (monthIcon) { monthIcon.className = "stat-icon green"; monthIcon.textContent = "🎁"; }
+    } else if (curMonthPaidCount > 0) {
+      monthVal.innerHTML = `<span style="color: #10b981; font-weight: 800;">✅ مسدد بالكامل</span>`;
+      if (monthCard) monthCard.className = "stat-card emerald";
+      if (monthIcon) { monthIcon.className = "stat-icon green"; monthIcon.textContent = "✅"; }
+    } else {
+      monthVal.innerHTML = `<span style="color: #38bdf8; font-weight: 800;">✅ لا توجد مطالبات</span>`;
+      if (monthCard) monthCard.className = "stat-card blue";
+      if (monthIcon) { monthIcon.className = "stat-icon blue"; monthIcon.textContent = "📅"; }
+    }
+  }
 
   // بناء كروت الجمعيات الخاصة بالعضو
   const container = document.getElementById("member-gam3eyat-container");
   container.innerHTML = "";
 
   if (memberGamEntries.length === 0) {
-    container.innerHTML = `<div style="text-align: center; padding: 2.5rem; background: white; border-radius: 14px; font-weight: 700; color: var(--text-muted);">لا توجد جمعيات مسجلة لهذا المشترك حالياً.</div>`;
+    container.innerHTML = `<div style="text-align: center; padding: 2.5rem; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 14px; font-weight: 700; color: var(--text-muted);">لا توجد جمعيات مسجلة لهذا المشترك حالياً.</div>`;
     return;
   }
 
@@ -1384,16 +1645,16 @@ function renderMemberPortfolio() {
     const payoutMonthObj = gam.months.find(mo => mo.key === m.turnMonth);
     const payoutName = payoutMonthObj ? payoutMonthObj.name : m.payoutDate;
 
-    const curMonthKey = gam.currentMonthKey || "sep";
+    const curMonthKey = getSmartCurrentMonthKey(gam);
     const curMonthObj = gam.months.find(mo => mo.key === curMonthKey) || gam.months[0];
     const curStatuses = m.payments[curMonthKey] || ["unpaid"];
     const curSt = curStatuses[subIdx] || "unpaid";
 
     let curBadge = "";
-    if (curSt === "payout") curBadge = `<span style="color: #b45309; font-weight: 800;"><span class="badge-icon">🎁</span> شهر قبضك</span>`;
-    else if (curSt === "paid") curBadge = `<span style="color: #047857; font-weight: 800;"><span class="badge-icon">✅</span> تم السداد</span>`;
-    else if (curSt === "future") curBadge = `<span style="color: #64748b; font-weight: 800;"><span class="badge-icon">⏳</span> لم تستحق بعد</span>`;
-    else curBadge = `<span style="color: #b91c1c; font-weight: 800;"><span class="badge-icon">❌</span> متأخر</span>`;
+    if (curSt === "payout") curBadge = `<span class="badge-cur payout">🎁 شهر القبض</span>`;
+    else if (curSt === "paid") curBadge = `<span class="badge-cur paid">✅ تم السداد</span>`;
+    else if (curSt === "future") curBadge = `<span class="badge-cur future">⏳ لم يستحق بعد</span>`;
+    else curBadge = `<span class="badge-cur unpaid">❌ مطلوب سداده</span>`;
 
     const card = document.createElement("div");
     card.className = "member-gam-card";
@@ -1411,14 +1672,14 @@ function renderMemberPortfolio() {
         badge = `<span class="status-badge payout"><span class="badge-icon">🎁</span><span class="badge-text">شهر القبض</span></span>`;
         note = `استلام مبلغ ${entry.payoutAmount.toLocaleString()} ${curCurrency}`;
       } else if (st === "paid") {
-        badge = `<span class="status-badge paid"><span class="badge-icon">✅</span><span class="badge-text">تم الدفع</span></span>`;
-        note = "مسدد";
+        badge = `<span class="status-badge paid"><span class="badge-icon">✅</span><span class="badge-text">مسدد</span></span>`;
+        note = "تم الدفع";
       } else if (st === "future") {
-        badge = `<span class="status-badge future"><span class="badge-icon">⏳</span><span class="badge-text">لم تستحق</span></span>`;
-        note = "قسط قادم";
+        badge = `<span class="status-badge future"><span class="badge-icon">⏳</span><span class="badge-text">قادم</span></span>`;
+        note = "لم يحن بعد";
       } else {
-        badge = `<span class="status-badge unpaid"><span class="badge-icon">❌</span><span class="badge-text">متأخر</span></span>`;
-        note = "قسط مطلوب";
+        badge = `<span class="status-badge unpaid"><span class="badge-icon">❌</span><span class="badge-text">مطلوب</span></span>`;
+        note = "قسط مستحق";
       }
 
       monthsRowsHtml += `
@@ -1426,29 +1687,34 @@ function renderMemberPortfolio() {
           <td><strong>${mo.name}</strong></td>
           <td><strong>${myShare.toLocaleString()} ${curCurrency}</strong></td>
           <td>${badge}</td>
-          <td style="font-size: 0.85rem; color: #64748b;">${note}</td>
+          <td class="col-note">${note}</td>
         </tr>
       `;
     });
 
     card.innerHTML = `
       <div class="member-gam-header">
-        <div>
-          <h3 style="font-size: 1.3rem; color: var(--primary); font-weight: 800;">${gam.name}</h3>
-          <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 0.25rem;">
-            الدور رقم (<strong>${m.turn}</strong>) • موعد استلام الجمعية: <strong>${payoutName}</strong>
-          </p>
-          ${entry.partnerName ? `<span class="co-member-badge">🤝 شريك مع (${entry.partnerName}) بنصف سهم</span>` : '<span class="co-member-badge" style="background: #ecfdf5; color: #047857; border-color: #a7f3d0;">🌟 سهم كامل</span>'}
+        <div class="gam-info-col">
+          <div class="gam-title-row">
+            <h3 class="gam-card-name">${gam.name}</h3>
+            ${entry.partnerName ? `<span class="share-tag partner">🤝 نصف سهم (مع ${entry.partnerName})</span>` : '<span class="share-tag full">🌟 سهم كامل</span>'}
+          </div>
+          <div class="gam-turn-meta">
+            <span>الدور رقم: <strong>(${m.turn})</strong></span>
+            <span>•</span>
+            <span>موعد الاستلام: <strong>${payoutName}</strong></span>
+          </div>
         </div>
-        <div class="member-payout-highlight">
-          <div class="highlight-label">نصيب استلامك</div>
-          <div class="highlight-date">${entry.payoutAmount.toLocaleString()} ${curCurrency}</div>
+        <div class="gam-payout-pill">
+          <span class="payout-pill-label">مبلغ القبض:</span>
+          <span class="payout-pill-val">${entry.payoutAmount.toLocaleString()} ${curCurrency}</span>
         </div>
       </div>
 
+      <!-- ملخص الأرقام السريع لهذه الجمعية -->
       <div class="member-stats-row">
         <div class="member-stat-box success">
-          <div class="box-title">ما دفعته في هذه الجمعية</div>
+          <div class="box-title">المدفوع بهذه الجمعية</div>
           <div class="box-num">${entry.gamPaid.toLocaleString()} ${curCurrency}</div>
         </div>
         <div class="member-stat-box danger">
@@ -1461,9 +1727,10 @@ function renderMemberPortfolio() {
         </div>
       </div>
 
+      <!-- مؤشر التقدم -->
       <div class="progress-container">
         <div class="progress-label-row">
-          <span>نسبة استكمال أقساط هذه الجمعية:</span>
+          <span>نسبة إنجاز أقساط الجمعية:</span>
           <span>${progressPercent}%</span>
         </div>
         <div class="progress-bar-bg">
@@ -1471,16 +1738,17 @@ function renderMemberPortfolio() {
         </div>
       </div>
 
-      <h4 style="font-size: 1rem; margin-bottom: 0.6rem; color: var(--primary); font-weight: 700;">
-        📋 جدول أقساطك التفصيلي:
-      </h4>
-      <div class="table-container" style="box-shadow: none; margin-bottom: 0;">
-        <table class="gam-table">
+      <!-- جدول الأقساط -->
+      <div class="member-schedule-header">
+        <h4>📋 جدول الأقساط والمواعيد</h4>
+      </div>
+      <div class="table-container member-table-wrap">
+        <table class="gam-table member-statement-table">
           <thead>
             <tr>
               <th>الشهر</th>
               <th>قيمة القسط</th>
-              <th>الموقف</th>
+              <th>الحالة</th>
               <th>ملاحظات</th>
             </tr>
           </thead>
@@ -1557,7 +1825,8 @@ function renderDirectoryTable(query) {
       </td>
       <td>${memberGams.join("") || '<span style="color: #94a3b8; font-size: 0.82rem;">غير مسجل بأي دور حالياً</span>'}</td>
       <td style="white-space: nowrap;">
-        <button class="btn btn-sm btn-gold" onclick="copyMagicLink('${encodeURIComponent(p.name)}', '${p.phone}')" title="نسخ الرابط السحري المباشر لكشف الحساب">🔗 نسخ الرابط</button>
+        <button class="btn btn-sm btn-gold" onclick="openDirectMemberStatement('${encodeURIComponent(p.name)}')" title="فتح وعرض كشف الحساب المعتمد لهذا المشترك فوراً">📜 كشف الحساب</button>
+        <button class="btn btn-sm btn-outline" onclick="copyMagicLink('${encodeURIComponent(p.name)}', '${p.phone}')" title="نسخ الرابط المباشر لكشف الحساب">🔗 نسخ الرابط</button>
         <button class="btn btn-sm btn-success" onclick="shareCredentialsWhatsApp('${encodeURIComponent(p.name)}', '${p.phone}', '${p.pin}')" title="إرسال الرابط المباشر وبيانات الدخول عبر واتساب">📲 واتساب</button>
         <button class="btn btn-sm btn-outline" onclick="openEditCredModal('${encodeURIComponent(p.name)}', '${p.phone || ''}', '${p.pin || ''}', '${p.payoutMethod || 'bank'}', '${encodeURIComponent(p.bankName || '')}', '${encodeURIComponent(p.iban || '')}')" title="تعديل بيانات المشترك والحساب البنكي">✏️</button>
       </td>
@@ -1582,23 +1851,29 @@ function getPortalLinkForMember(memberName, phone, autoLogin = false) {
   const pin = p ? p.pin : "";
   const resolvedPhone = cleanPhone || (p ? p.phone : "");
 
-  let baseUrl;
-  if (appData.publishedUrl && appData.publishedUrl.startsWith('http')) {
+  let baseUrl = "https://gam3eyaty.netlify.app";
+  if (appData && appData.publishedUrl && appData.publishedUrl.startsWith('http')) {
     baseUrl = appData.publishedUrl.replace(/\/+$/, '').replace(/\/index\.html$/i, '');
-  } else if (window.location.protocol === 'file:') {
-    baseUrl = window.location.href.split('?')[0];
-  } else {
+  } else if (window.location.protocol.startsWith('http') && !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
     baseUrl = (window.location.origin + window.location.pathname).replace(/\/+$/, '').replace(/\/index\.html$/i, '');
   }
 
-  // رابط فائق القصر والنظافة للواتساب (مكون من سطر واحد فقط)
-  const joinChar = baseUrl.includes('?') ? '&' : (baseUrl.endsWith('/') || baseUrl.endsWith('.html') ? '?' : '/?');
-  const nameParam = cleanName ? `&name=${encodeURIComponent(cleanName)}` : '';
-  const phoneParam = resolvedPhone ? `&m=${encodeURIComponent(resolvedPhone)}` : '';
-  const mgrParam = (appState && appState.currentManager && appState.currentManager.uid) ? `&mgr=${encodeURIComponent(appState.currentManager.uid)}` : '';
-  const pinParam = autoLogin && pin ? `&k=${encodeURIComponent(pin)}` : '';
+  // رابط فائق القصر والنظافة (سطر واحد فقط خفيف ومباشر للواتساب بدون رموز معقدة)
+  let query = '';
+  if (resolvedPhone) {
+    query = `m=${encodeURIComponent(resolvedPhone)}`;
+  } else if (cleanName) {
+    query = `m=${encodeURIComponent(cleanName)}`;
+  } else {
+    query = `portal=member`;
+  }
 
-  return `${baseUrl}${joinChar}portal=member${nameParam}${phoneParam}${mgrParam}${pinParam}`;
+  if (autoLogin && pin) {
+    query += `&k=${encodeURIComponent(pin)}`;
+  }
+
+  const joinChar = baseUrl.includes('?') ? '&' : (baseUrl.endsWith('/') ? '?' : '/?');
+  return `${baseUrl}${joinChar}${query}`;
 }
 
 function getMagicLinkForPhone(phone) {
@@ -2600,24 +2875,8 @@ function attachEventListeners() {
     appState.currentMonthKey = e.target.value;
     const gam = getCurrentGam();
     if (gam) {
-      gam.currentMonthKey = e.target.value;
-      const curMonthIdx = gam.months.findIndex(mo => mo.key === e.target.value);
-      if (curMonthIdx !== -1) {
-        gam.members.forEach(m => {
-          if (m.payments) {
-            gam.months.forEach((mo, mIdx) => {
-              if (m.payments[mo.key]) {
-                m.payments[mo.key] = m.payments[mo.key].map(st => {
-                  if (mIdx <= curMonthIdx && st === "future") return "unpaid";
-                  if (mIdx > curMonthIdx && st === "unpaid") return "future";
-                  return st;
-                });
-              }
-            });
-          }
-        });
-        saveData(appData);
-      }
+      syncMonthPaymentStatuses(gam, e.target.value);
+      saveData(appData);
     }
     renderAdminDashboard();
     renderMatrixTable();
@@ -2736,14 +2995,20 @@ function attachEventListeners() {
     };
   }
 
-  // تسجيل خروج المشترك
+  // تسجيل خروج المشترك أو العودة للوحة الإدارة إذا كان المدير هو الذي يعاين الكشف
   document.getElementById("btn-member-logout").onclick = () => {
     appState.loggedMember = null;
     try {
       sessionStorage.removeItem("gam_active_member_session");
     } catch(e) {}
-    showToast("تم تسجيل الخروج من بوابة المشترك 🚪");
-    renderMemberSection();
+    if (appState.currentManager || appState.isAdminAuthenticated) {
+      appState.currentRole = "admin";
+      updateView();
+      showToast("تمت العودة للوحة تحكم إدارة الجمعيات 🛡️");
+    } else {
+      showToast("تم تسجيل الخروج من بوابة المشترك 🚪");
+      renderMemberSection();
+    }
   };
 
   // طباعة كشف الحساب المعتمد
@@ -2988,7 +3253,13 @@ function attachEventListeners() {
     };
   }
 
-  document.getElementById("btn-members-directory").onclick = openMembersDirectoryModal;
+  const btnMembersDir = document.getElementById("btn-members-directory");
+  if (btnMembersDir) {
+    btnMembersDir.onclick = () => {
+      closeModal("modal-settings");
+      openMembersDirectoryModal();
+    };
+  }
 
   document.getElementById("dir-search-input").addEventListener("input", (e) => {
     renderDirectoryTable(e.target.value);
@@ -3014,12 +3285,18 @@ function attachEventListeners() {
   // أزرار أرشفة الجمعية واستعراض الأرشيف
   const btnArchiveCurrent = document.getElementById("btn-archive-current-gam");
   if (btnArchiveCurrent) {
-    btnArchiveCurrent.onclick = archiveCurrentGam;
+    btnArchiveCurrent.onclick = () => {
+      closeModal("modal-manage-gam");
+      archiveCurrentGam();
+    };
   }
 
   const btnOpenArchives = document.getElementById("btn-open-archives");
   if (btnOpenArchives) {
-    btnOpenArchives.onclick = openArchivesModal;
+    btnOpenArchives.onclick = () => {
+      closeModal("modal-settings");
+      openArchivesModal();
+    };
   }
 
   // نوافذ الواتساب والإعدادات وتسجيل الدخول
@@ -3065,7 +3342,12 @@ function attachEventListeners() {
       if (emailInput) emailInput.value = "admin@gam.com";
       if (phoneInput) phoneInput.value = "";
     }
-    if (passInput) passInput.value = "";
+    if (passInput) {
+      passInput.value = "";
+      passInput.type = "password";
+      const btnToggle = document.getElementById("btn-toggle-mgr-profile-pass");
+      if (btnToggle) btnToggle.textContent = "👁️";
+    }
     openModal("modal-settings");
   }
 
@@ -3094,6 +3376,14 @@ function attachEventListeners() {
         btnCloudSync.textContent = "☁️ مزامنة السحابة";
         btnCloudSync.disabled = false;
       }
+    };
+  }
+
+  const btnEnterDashActive = document.getElementById("btn-enter-dashboard-active");
+  if (btnEnterDashActive) {
+    btnEnterDashActive.onclick = () => {
+      closeModal("modal-manager-auth");
+      updateView();
     };
   }
 
@@ -3195,10 +3485,15 @@ function attachEventListeners() {
   if (formMgrProfile) {
     formMgrProfile.onsubmit = async (e) => {
       e.preventDefault();
-      const name = (document.getElementById("mgr-profile-name").value || "").trim();
-      const email = (document.getElementById("mgr-profile-email").value || "").trim();
-      const phone = (document.getElementById("mgr-profile-phone").value || "").trim();
-      const pass = (document.getElementById("mgr-profile-password").value || "").trim();
+      const nameEl = document.getElementById("mgr-profile-name");
+      const emailEl = document.getElementById("mgr-profile-email");
+      const phoneEl = document.getElementById("mgr-profile-phone");
+      const passEl = document.getElementById("mgr-profile-password");
+
+      const name = (nameEl ? nameEl.value : "").trim();
+      const email = (emailEl ? emailEl.value : "").trim();
+      const phone = (phoneEl ? phoneEl.value : (appState.currentManager ? appState.currentManager.phone || "" : "")).trim();
+      const pass = (passEl ? passEl.value : "").trim();
       const submitBtn = formMgrProfile.querySelector('button[type="submit"]');
       const origText = submitBtn ? submitBtn.textContent : "";
 
@@ -3220,8 +3515,8 @@ function attachEventListeners() {
           phone: phone
         };
         if (pass) {
-          if (pass.length < 4) {
-            alert("كلمة المرور يجب أن تكون 4 أحرف/أرقام على الأقل");
+          if (pass.length < 6) {
+            alert("كلمة المرور يجب أن تكون 6 أحرف أو أرقام على الأقل.");
             if (submitBtn) {
               submitBtn.textContent = origText;
               submitBtn.disabled = false;
@@ -3245,7 +3540,7 @@ function attachEventListeners() {
 
         closeModal("modal-settings");
         updateView();
-        showToast(`تم حفظ بريدك الشخصي (${email}) بنجاح! يمكنك الآن تسجيل الدخول به دائماً 🎉`);
+        showToast(`تم حفظ بيانات حسابك بنجاح! 🎉`);
       } catch (err) {
         console.error("خطأ في تحديث بيانات حساب المدير:", err);
         alert("تعذر تحديث البريد وبيانات الحساب: " + (err.message || "حدث خطأ غير متوقع"));
@@ -3258,47 +3553,93 @@ function attachEventListeners() {
     };
   }
 
-  // دخول المدير
-  document.getElementById("form-login").onsubmit = (e) => {
-    e.preventDefault();
-    const enteredPin = document.getElementById("input-admin-pin").value;
-    const correctPin = appData.adminPin || "1234";
+  // زر إظهار/إخفاء كلمة المرور في شاشة الملف الشخصي
+  const btnToggleMgrPass = document.getElementById("btn-toggle-mgr-profile-pass");
+  if (btnToggleMgrPass) {
+    btnToggleMgrPass.onclick = () => {
+      const passInput = document.getElementById("mgr-profile-password");
+      if (passInput) {
+        if (passInput.type === "password") {
+          passInput.type = "text";
+          btnToggleMgrPass.textContent = "🙈";
+        } else {
+          passInput.type = "password";
+          btnToggleMgrPass.textContent = "👁️";
+        }
+      }
+    };
+  }
 
-    if (enteredPin === correctPin) {
-      appState.isAdminAuthenticated = true;
-      appState.currentRole = "admin";
-      closeModal("modal-login");
-      document.getElementById("input-admin-pin").value = "";
-      updateView();
-      showToast("تم التحقق من الرقم السري بنجاح 🔓");
-    } else {
-      alert("الرقم السري غير صحيح! يُرجى المحاولة مرة أخرى.");
-      document.getElementById("input-admin-pin").focus();
-    }
-  };
 
-  // تغيير الرقم السري للمدير
-  document.getElementById("form-change-pin").onsubmit = (e) => {
-    e.preventDefault();
-    const oldPin = document.getElementById("input-old-pin").value;
-    const newPin = document.getElementById("input-new-pin").value;
-    const currentPin = appData.adminPin || "1234";
+  // زر تسجيل الخروج من حساب المدير
+  const btnMgrLogout = document.getElementById("btn-manager-logout");
+  if (btnMgrLogout) {
+    btnMgrLogout.onclick = async () => {
+      if (confirm("هل أنت متأكد من رغبتك في تسجيل الخروج من حساب المدير؟")) {
+        try {
+          btnMgrLogout.textContent = "⏳ جاري الخروج...";
+          btnMgrLogout.disabled = true;
+          await FirebaseService.logoutManager();
+          closeModal("modal-settings");
+          showToast("تم تسجيل الخروج من حساب المدير بنجاح 👋");
+        } catch(err) {
+          console.warn("خطأ أثناء تسجيل الخروج:", err);
+          closeModal("modal-settings");
+        } finally {
+          btnMgrLogout.textContent = "🚪 تسجيل الخروج من الحساب";
+          btnMgrLogout.disabled = false;
+        }
+      }
+    };
+  }
 
-    if (oldPin !== currentPin) {
-      alert("الرقم السري الحالي غير صحيح!");
-      return;
-    }
-    if (newPin.length < 4) {
-      alert("يجب أن يتكون الرقم السري الجديد من 4 أرقام على الأقل");
-      return;
-    }
+  // دخول المدير القديم (Local PIN Fallback)
+  const formLoginEl = document.getElementById("form-login");
+  if (formLoginEl) {
+    formLoginEl.onsubmit = (e) => {
+      e.preventDefault();
+      const enteredPin = document.getElementById("input-admin-pin").value;
+      const correctPin = appData.adminPin || "1234";
 
-    appData.adminPin = newPin;
-    saveData(appData);
-    closeModal("modal-settings");
-    document.getElementById("form-change-pin").reset();
-    showToast("تم تغيير الرقم السري بنجاح 🔑");
-  };
+      if (enteredPin === correctPin) {
+        appState.isAdminAuthenticated = true;
+        appState.currentRole = "admin";
+        closeModal("modal-login");
+        document.getElementById("input-admin-pin").value = "";
+        updateView();
+        showToast("تم التحقق من الرقم السري بنجاح 🔓");
+      } else {
+        alert("الرقم السري غير صحيح! يُرجى المحاولة مرة أخرى.");
+        document.getElementById("input-admin-pin").focus();
+      }
+    };
+  }
+
+  // تغيير الرقم السري للمدير (احتياطي)
+  const formChangePinEl = document.getElementById("form-change-pin");
+  if (formChangePinEl) {
+    formChangePinEl.onsubmit = (e) => {
+      e.preventDefault();
+      const oldPin = document.getElementById("input-old-pin").value;
+      const newPin = document.getElementById("input-new-pin").value;
+      const currentPin = appData.adminPin || "1234";
+
+      if (oldPin !== currentPin) {
+        alert("الرقم السري الحالي غير صحيح!");
+        return;
+      }
+      if (newPin.length < 4) {
+        alert("يجب أن يتكون الرقم السري الجديد من 4 أرقام على الأقل");
+        return;
+      }
+
+      appData.adminPin = newPin;
+      saveData(appData);
+      closeModal("modal-settings");
+      formChangePinEl.reset();
+      showToast("تم تغيير الرقم السري بنجاح 🔑");
+    };
+  }
 
   // استعادة البيانات الأصلية (إذا وجد الزر في أي مكان مستقبلاً)
   const btnResetData = document.getElementById("btn-reset-data");
@@ -3321,15 +3662,22 @@ function attachEventListeners() {
   const btnOpenMgrAuth = document.getElementById("btn-open-manager-auth");
   if (btnOpenMgrAuth) {
     btnOpenMgrAuth.onclick = () => {
-      // تحديث شريط الحساب النشط داخل النافذة
-      const statusBar = document.getElementById("mgr-active-status-bar");
-      const statusName = document.getElementById("mgr-active-status-name");
+      // إذا كان المدير مسجل دخوله بالفعل، نفتح له لوحة التحكم والإعدادات مباشرة!
       if (appState.currentManager) {
-        if (statusBar) statusBar.style.display = "flex";
-        if (statusName) statusName.textContent = `${appState.currentManager.displayName || appState.currentManager.email || 'المدير'} (${appState.currentManager.email || appState.currentManager.phone || 'حساب مستقل'})`;
-      } else {
-        if (statusBar) statusBar.style.display = "none";
+        openSettingsModal();
+        return;
       }
+
+      // إذا لم يكن مسجلاً، نفتح نافذة تسجيل الدخول العادية
+      const statusBar = document.getElementById("mgr-active-status-bar");
+      if (statusBar) statusBar.style.display = "none";
+      const tabsRow = document.querySelector(".auth-tabs-row");
+      if (tabsRow) tabsRow.style.display = "flex";
+      const formLogin = document.getElementById("form-manager-login");
+      if (formLogin) formLogin.style.display = "block";
+      const formReg = document.getElementById("form-manager-register");
+      if (formReg) formReg.style.display = "none";
+
       openModal("modal-manager-auth");
     };
   }
@@ -3347,8 +3695,10 @@ function attachEventListeners() {
 
       setAppData(loadData());
       if (appData.gam3eyat && appData.gam3eyat.length > 0) {
-        appState.currentGamId = appData.gam3eyat[0].id;
-        appState.currentMonthKey = appData.gam3eyat[0].currentMonthKey || (appData.gam3eyat[0].months[0] && appData.gam3eyat[0].months[0].key);
+        const activeGam = appData.gam3eyat.find(g => g.id === appState.currentGamId) || appData.gam3eyat[0];
+        appState.currentGamId = activeGam.id;
+        appState.currentMonthKey = getSmartCurrentMonthKey(activeGam);
+        syncMonthPaymentStatuses(activeGam, appState.currentMonthKey);
       }
       const statusBar = document.getElementById("mgr-active-status-bar");
       if (statusBar) statusBar.style.display = "none";
@@ -3431,8 +3781,10 @@ function attachEventListeners() {
         }
 
         if (appData.gam3eyat && appData.gam3eyat.length > 0) {
-          appState.currentGamId = appData.gam3eyat[0].id;
-          appState.currentMonthKey = appData.gam3eyat[0].currentMonthKey || (appData.gam3eyat[0].months[0] && appData.gam3eyat[0].months[0].key);
+          const activeGam = appData.gam3eyat.find(g => g.id === appState.currentGamId) || appData.gam3eyat[0];
+          appState.currentGamId = activeGam.id;
+          appState.currentMonthKey = getSmartCurrentMonthKey(activeGam);
+          syncMonthPaymentStatuses(activeGam, appState.currentMonthKey);
         } else {
           appState.currentGamId = "";
           appState.currentMonthKey = "";
@@ -3602,7 +3954,20 @@ function attachEventListeners() {
       } else if (forgotEmailInput) {
         forgotEmailInput.value = "";
       }
+      const secPin = document.getElementById("section-reset-via-pin");
+      if (secPin) secPin.style.display = "none";
       openModal("modal-forgot-password");
+    };
+  }
+
+  // زر إظهار/إخفاء قسم التعيين بـ PIN
+  const btnTogglePinResetSection = document.getElementById("btn-toggle-pin-reset");
+  if (btnTogglePinResetSection) {
+    btnTogglePinResetSection.onclick = () => {
+      const secPin = document.getElementById("section-reset-via-pin");
+      if (secPin) {
+        secPin.style.display = (secPin.style.display === "none" || !secPin.style.display) ? "block" : "none";
+      }
     };
   }
 
@@ -3619,13 +3984,13 @@ function attachEventListeners() {
         btnSendResetEmail.disabled = true;
         btnSendResetEmail.textContent = "⏳ جاري الإرسال...";
         await FirebaseService.sendPasswordResetEmail(email);
-        alert(`تم إرسال رابط استرجاع وتعيين كلمة المرور بنجاح إلى:\n${email}\nيُرجى مراجعة بريدك الإلكتروني والضغط على الرابط لتحديد كلمة مرور جديدة.`);
+        alert(`✅ تم إرسال رابط استعادة كلمة المرور بنجاح إلى:\n(${email})\n\n⚠️ تنبيه هام بخصوص بريد جيميل (Gmail):\nتصل الرسالة من نظام جوجل بعنوان:\n(noreply@gam3eyaty.firebaseapp.com)\n\nنظراً لسياسات فلاتر جيميل التلقائية، يتم وضع الرسالة غالباً في مجلد:\n📁 "الرسائل غير المرغوب فيها" (Spam / Junk Mail)\nأو تبويب "الترويجية / التحديثات".\n\n🔎 يُرجى فتح مجلد Spam أو البحث في شريط بحث جيميل عن: gam3eyaty وستجد الرسالة فوراً!`);
         closeModal("modal-forgot-password");
       } catch (err) {
-        alert(err.message || "تعذر إرسال الرابط، تأكد من صحة البريد أو استخدم الطريقة السريعة برمز PIN أدناه");
+        alert(err.message || "تعذر إرسال الرابط، تأكد من صحة البريد أو استخدم خيار رمز PIN الفوري بالأسفل");
       } finally {
         btnSendResetEmail.disabled = false;
-        btnSendResetEmail.textContent = "📩 إرسال رابط الاسترجاع للبريد";
+        btnSendResetEmail.textContent = "📩 إرسال رابط استعادة كلمة المرور";
       }
     };
   }
@@ -3723,7 +4088,8 @@ function attachEventListeners() {
       appState.currentRole = "admin";
       if (appData.gam3eyat && appData.gam3eyat[0]) {
         appState.currentGamId = appData.gam3eyat[0].id;
-        appState.currentMonthKey = appData.gam3eyat[0].currentMonthKey || (appData.gam3eyat[0].months[0] && appData.gam3eyat[0].months[0].key) || "sep";
+        appState.currentMonthKey = getSmartCurrentMonthKey(appData.gam3eyat[0]);
+        syncMonthPaymentStatuses(appData.gam3eyat[0], appState.currentMonthKey);
       }
       renderGamTabs();
       setupMonthSelector();
@@ -3820,7 +4186,8 @@ window.openMatrixPage = function() {
   appState.currentRole = "admin";
   if (appData.gam3eyat && appData.gam3eyat[0]) {
     appState.currentGamId = appData.gam3eyat[0].id;
-    appState.currentMonthKey = appData.gam3eyat[0].currentMonthKey || (appData.gam3eyat[0].months[0] && appData.gam3eyat[0].months[0].key) || "sep";
+    appState.currentMonthKey = getSmartCurrentMonthKey(appData.gam3eyat[0]);
+    syncMonthPaymentStatuses(appData.gam3eyat[0], appState.currentMonthKey);
   }
   renderGamTabs();
   setupMonthSelector();
@@ -3866,6 +4233,25 @@ window.openSharedSharesDemo = function() {
 function openModal(modalId) {
   if (modalId === "modal-login") {
     modalId = "modal-manager-auth";
+  }
+  if (modalId === "modal-manager-auth") {
+    const statusBar = document.getElementById("mgr-active-status-bar");
+    const statusName = document.getElementById("mgr-active-status-name");
+    const tabsRow = document.querySelector(".auth-tabs-row");
+    const formLogin = document.getElementById("form-manager-login");
+    const formReg = document.getElementById("form-manager-register");
+    if (appState.currentManager) {
+      if (statusBar) statusBar.style.display = "flex";
+      if (statusName) statusName.textContent = `${appState.currentManager.displayName || 'المدير'} (${appState.currentManager.email || appState.currentManager.phone || 'حساب نشط'})`;
+      if (tabsRow) tabsRow.style.display = "none";
+      if (formLogin) formLogin.style.display = "none";
+      if (formReg) formReg.style.display = "none";
+    } else {
+      if (statusBar) statusBar.style.display = "none";
+      if (tabsRow) tabsRow.style.display = "flex";
+      if (formLogin) formLogin.style.display = "block";
+      if (formReg) formReg.style.display = "none";
+    }
   }
   const el = document.getElementById(modalId);
   if (el) el.classList.add("active");
@@ -3954,26 +4340,49 @@ function setupManagerCloudLifecycle() {
     if (managerUser) {
       appState.currentManager = managerUser;
       appState.isAdminAuthenticated = true;
-      appState.currentRole = "admin";
+      const isMemberLink = window.location.search.includes('m=') || window.location.search.includes('phone=') || window.location.search.includes('portal=member');
+      if (!isMemberLink) {
+        appState.currentRole = "admin";
+      } else {
+        appState.currentRole = "member";
+      }
       if (cloudNameEl) cloudNameEl.textContent = `🟢 ${managerUser.displayName || managerUser.email || "المدير"}`;
       if (cloudIconEl) cloudIconEl.textContent = "🛡️";
 
       // جلب بيانات المدير من السحابة أو التخزين المحلي
       try {
         const cloudData = await FirebaseService.getManagerData(managerUser.uid);
-        if (cloudData && Array.isArray(cloudData.gam3eyat) && cloudData.gam3eyat.length > 0) {
+        const targetVer = (typeof INITIAL_DATA !== "undefined" && INITIAL_DATA.dataVersion) ? INITIAL_DATA.dataVersion : "2026.10.05_v3.4";
+        const isCloudValid = cloudData &&
+                             Array.isArray(cloudData.gam3eyat) &&
+                             cloudData.gam3eyat.length > 0 &&
+                             cloudData.dataVersion === targetVer &&
+                             Array.isArray(cloudData.registeredMembers) &&
+                             cloudData.registeredMembers.length >= 15;
+
+        if (isCloudValid) {
           setAppData(cloudData);
           if (appData.gam3eyat.length > 0) {
-            appState.currentGamId = appData.gam3eyat[0].id;
-            appState.currentMonthKey = appData.gam3eyat[0].currentMonthKey || (appData.gam3eyat[0].months[0] && appData.gam3eyat[0].months[0].key);
+            const activeGam = appData.gam3eyat.find(g => g.id === appState.currentGamId) || appData.gam3eyat[0];
+            appState.currentGamId = activeGam.id;
+            appState.currentMonthKey = getSmartCurrentMonthKey(activeGam);
+            syncMonthPaymentStatuses(activeGam, appState.currentMonthKey);
           } else {
             appState.currentGamId = "";
             appState.currentMonthKey = "";
           }
         } else {
-          // إذا كانت بيانات السحابة فارغة، نحمي البيانات الحقيقية الحالية ونرفعها فوراً للسحابة لملء الحساب
-          const currentRealData = (appData && Array.isArray(appData.gam3eyat) && appData.gam3eyat.length > 0) ? appData : loadData();
+          // إذا كانت بيانات حساب المدير في السحابة قديمة أو تفتقر لبيانات المشتركين الـ 19 المعتمدة:
+          // نقوم تلقائياً بترقية بياناته وحفظ النسخة المعتمدة الشاملة في حسابه السحابي وفي السحابة العامة
+          console.log("🔄 جاري ترقية وتحديث بيانات حساب المدير السحابي بالنسخة المعتمدة بجميع المشتركين...");
+          const currentRealData = JSON.parse(JSON.stringify(INITIAL_DATA));
           setAppData(currentRealData);
+          if (appData.gam3eyat.length > 0) {
+            const activeGam = appData.gam3eyat.find(g => g.id === appState.currentGamId) || appData.gam3eyat[0];
+            appState.currentGamId = activeGam.id;
+            appState.currentMonthKey = getSmartCurrentMonthKey(activeGam);
+            syncMonthPaymentStatuses(activeGam, appState.currentMonthKey);
+          }
           if (managerUser && managerUser.uid) {
             await FirebaseService.saveManagerData(managerUser.uid, currentRealData);
           }
@@ -3993,8 +4402,10 @@ function setupManagerCloudLifecycle() {
       if (migrationBanner) migrationBanner.style.display = "none";
       setAppData(loadData());
       if (appData.gam3eyat && appData.gam3eyat.length > 0) {
-        appState.currentGamId = appData.gam3eyat[0].id;
-        appState.currentMonthKey = appData.gam3eyat[0].currentMonthKey || (appData.gam3eyat[0].months[0] && appData.gam3eyat[0].months[0].key);
+        const activeGam = appData.gam3eyat.find(g => g.id === appState.currentGamId) || appData.gam3eyat[0];
+        appState.currentGamId = activeGam.id;
+        appState.currentMonthKey = getSmartCurrentMonthKey(activeGam);
+        syncMonthPaymentStatuses(activeGam, appState.currentMonthKey);
       }
       // إذا كان الرابط يطلب بوابة المشتركين، نوجهه فوراً لصفحة المشتركين، وإلا تكون الواجهة هي صفحة الهبوط
       if (window.location.search.includes('portal=member') || window.location.search.includes('m=') || window.location.search.includes('phone=')) {

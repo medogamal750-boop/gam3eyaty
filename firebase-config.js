@@ -29,6 +29,7 @@ try {
     if (isConfigValid) {
       firebaseApp = firebase.initializeApp(firebaseConfig);
       firebaseAuth = firebase.auth();
+      firebaseAuth.languageCode = "ar"; // تعيين لغة الإيميلات وصفحات المصادقة إلى العربية
       firebaseDb = firebase.firestore();
       isFirebaseInitialized = true;
       console.log("🟢 تم تفعيل Google Firebase بنجاح (وضع السحابة الحية)");
