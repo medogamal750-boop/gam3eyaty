@@ -7,7 +7,7 @@
  * 4. تصميم مالي أنيق وتفاعلي يدعم الأسهم المشتركة وإعادة ترتيب الأدوار.
  */
 
-const STORAGE_KEY = "gam3eyat_app_data_v2_5";
+const STORAGE_KEY = "gam3eyat_app_data_v3";
 
 let appState = {
   currentGamId: "gam1",
@@ -1056,8 +1056,11 @@ function getAllUniqueParticipants() {
           iban: rm.iban || ""
         });
       } else if (trimmed && map.has(trimmed)) {
-        // تحديث بيانات البنك من الدليل العام إن وجدت
+        // تحديث الهاتف والكود وبيانات البنك من الدليل العام إن وجدت
         const existing = map.get(trimmed);
+        if (rm.phone) existing.phone = rm.phone;
+        if (rm.pin) existing.pin = rm.pin;
+        if (rm.code) existing.code = rm.code;
         if (rm.payoutMethod) existing.payoutMethod = rm.payoutMethod;
         if (rm.bankName && !existing.bankName) existing.bankName = rm.bankName;
         if (rm.iban && !existing.iban) existing.iban = rm.iban;
@@ -1209,21 +1212,29 @@ async function handleMemberLogin(identifierInput, pinInput) {
   const normInput = normalizePhoneNumber(cleanInput);
   const cleanPhone = cleanPinCode(cleanInput);
 
+  const inputDigits = cleanPinCode(cleanInput).replace(/\D/g, "");
+
   // البحث عن المرشحين المطابقين (بالجوال أو البريد الإلكتروني أو الاسم)
   let candidates = all.filter(p => {
     const pNorm = normalizePhoneNumber(p.phone);
+    const pDigits = cleanPinCode(p.phone || "").replace(/\D/g, "");
     const pEmail = (p.email || "").toLowerCase().trim();
     const pName = (p.name || "").toLowerCase().trim();
 
     // 1. مطابقة البريد الإلكتروني
     if (isEmail && pEmail && pEmail === lowerInput) return true;
 
-    // 2. مطابقة رقم الجوال
-    if (normInput && pNorm && (normInput === pNorm || pNorm.endsWith(normInput) || normInput.endsWith(pNorm))) return true;
-    if (cleanPhone && p.phone && (cleanPinCode(p.phone) === cleanPhone || p.phone.replace(/^0+/, '') === cleanPhone.replace(/^0+/, ''))) return true;
+    // 2. مطابقة رقم الجوال (يدعم كافة الصيغ: 05..., 9665..., +966..., 5...)
+    if (inputDigits && pDigits) {
+      if (inputDigits === pDigits) return true;
+      if (normInput && pNorm && (normInput === pNorm || pNorm.endsWith(normInput) || normInput.endsWith(pNorm))) return true;
+      if (inputDigits.length >= 8 && pDigits.length >= 8) {
+        if (inputDigits.slice(-9) === pDigits.slice(-9)) return true;
+      }
+    }
 
     // 3. مطابقة الاسم
-    if (pName === lowerInput || pName.includes(lowerInput) || lowerInput.includes(pName)) return true;
+    if (pName && lowerInput.length >= 3 && (pName === lowerInput || pName.includes(lowerInput) || lowerInput.includes(pName))) return true;
 
     return false;
   });
@@ -1234,14 +1245,15 @@ async function handleMemberLogin(identifierInput, pinInput) {
   }
 
   // 4. التحقق من صحة الكود السري (4 أرقام)
+  const cleanAuthPin = cleanPinCode(cleanPin);
   const matched = candidates.find(p => {
-    const memberPin = String(p.pin || "").trim();
-    const phonePin = (p.phone && p.phone.length >= 4) ? p.phone.replace(/[^0-9]/g, "").slice(-4) : "";
+    const memberPin = cleanPinCode(p.pin);
+    const phonePin = (p.phone && p.phone.length >= 4) ? cleanPinCode(p.phone).slice(-4) : "";
     return (
-      (memberPin && memberPin === cleanPin) ||
-      (phonePin && phonePin === cleanPin) ||
-      cleanPin === "1234" ||
-      (appData.adminPin && cleanPin === String(appData.adminPin))
+      (memberPin && memberPin === cleanAuthPin) ||
+      (phonePin && phonePin === cleanAuthPin) ||
+      cleanAuthPin === "1234" ||
+      (appData.adminPin && cleanAuthPin === cleanPinCode(appData.adminPin))
     );
   });
 
