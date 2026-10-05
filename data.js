@@ -10,7 +10,7 @@ const INITIAL_DATA = {
     "seconds": 1791123559,
     "nanoseconds": 167000000
   },
-  "dataVersion": "2026.10.05_v3.8",
+  "dataVersion": "2026.10.05_v3.9",
   "publishedUrl": "https://gam3eyaty.netlify.app",
   "adminPin": "1234",
   "pinsSecuredV2": true,
@@ -1594,6 +1594,7 @@ const INITIAL_DATA = {
         }
       ],
       "name": "الجمعية الثانية (مايو - ديسمبر 2026)",
+      "currentMonthKey": "oct",
       "id": "gam2",
       "months": [
         {

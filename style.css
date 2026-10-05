@@ -1329,8 +1329,12 @@ body {
 }
 
 .member-unified-portfolio {
-  max-width: 980px;
+  max-width: 1200px;
   margin: 0 auto;
+}
+
+.member-quick-stats {
+  grid-template-columns: repeat(4, 1fr);
 }
 
 .official-statement-banner {
@@ -1393,6 +1397,270 @@ body {
   font-weight: 800;
   color: #ffffff;
   margin-top: 0.2rem;
+}
+
+/* ========================================================
+   الكشف المالي الموحد للمشترك (Unified Master Statement)
+   ======================================================== */
+.unified-statement-card {
+  background: rgba(13, 27, 48, 0.78);
+  backdrop-filter: blur(16px);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.38), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  padding: 1.35rem;
+  margin-bottom: 1.5rem;
+  color: #f8fafc;
+}
+
+/* شريط التنبيه الذكي للمطالبات */
+.statement-alert-strip {
+  border-radius: 10px;
+  padding: 0.85rem 1.15rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.statement-alert-strip.warning {
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  border-right: 4px solid #f43f5e;
+}
+
+.statement-alert-strip.success {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-right: 4px solid #10b981;
+}
+
+.alert-strip-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #ffffff;
+  flex-wrap: wrap;
+}
+
+.alert-amount-pill {
+  background: #f43f5e;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 0.2rem 0.65rem;
+  border-radius: 9999px;
+  margin-right: auto;
+}
+
+.alert-strip-details {
+  font-size: 0.84rem;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+/* عنوان جدول الكشف */
+.table-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+}
+
+.unified-table-heading {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.title-sub-badge {
+  font-size: 0.8rem;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+/* جدول الكشف الموحد */
+.master-statement-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.master-statement-table th {
+  background: rgba(10, 20, 36, 0.85);
+  color: #94a3b8;
+  font-size: 0.84rem;
+  font-weight: 800;
+  padding: 0.85rem 0.65rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.25);
+  white-space: nowrap;
+}
+
+.master-statement-table td {
+  padding: 0.75rem 0.65rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  font-size: 0.88rem;
+  vertical-align: middle;
+}
+
+.table-gam-name {
+  font-weight: 800;
+  color: #ffffff;
+  font-size: 0.95rem;
+}
+
+.table-gam-subtag {
+  margin-top: 0.25rem;
+}
+
+.tag-partner {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  color: #fbbf24;
+  font-size: 0.74rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  display: inline-block;
+}
+
+.tag-full {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #34d399;
+  font-size: 0.74rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  display: inline-block;
+}
+
+.turn-meta-val {
+  font-weight: 700;
+  color: #f8fafc;
+  font-size: 0.85rem;
+}
+
+.payout-sub-meta {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin-top: 0.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.payout-status-tag {
+  font-size: 0.72rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  font-weight: 800;
+}
+.payout-status-tag.received {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+.payout-status-tag.pending {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.statement-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.statement-status-badge.paid {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+.statement-status-badge.payout {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.45);
+}
+.statement-status-badge.future {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+.statement-status-badge.unpaid {
+  background: rgba(244, 63, 94, 0.18);
+  color: #f87171;
+  border: 1px solid rgba(244, 63, 94, 0.45);
+}
+
+.mini-progress-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+.mini-progress-text {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #38bdf8;
+}
+.mini-progress-bar {
+  width: 55px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.mini-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #00f0ff);
+  border-radius: 9999px;
+}
+
+.col-center { text-align: center; }
+.col-num { text-align: center; font-weight: 700; }
+.col-success strong { color: #34d399; }
+.col-danger strong { color: #f87171; }
+.col-subtext {
+  font-size: 0.74rem;
+  color: #94a3b8;
+  margin-top: 0.15rem;
+}
+
+.master-total-row {
+  background: rgba(10, 25, 47, 0.95);
+  border-top: 2px solid #00ff88;
+}
+.master-total-row td {
+  padding: 0.85rem 0.65rem;
+  font-size: 0.92rem;
+  color: #ffffff;
+}
+
+.detailed-gam-box {
+  margin-top: 0.85rem;
+  padding: 0.85rem;
+  background: rgba(10, 25, 47, 0.65);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 10px;
 }
 
 /* بطاقات الجمعيات الخاصة بالعضو */
@@ -2573,8 +2841,8 @@ body {
    =================================================== */
 @media print {
   @page {
-    size: A4 portrait;
-    margin: 8mm 10mm 8mm 10mm;
+    size: A4 landscape;
+    margin: 8mm 12mm 8mm 12mm;
   }
 
   *, *::before, *::after {
@@ -2598,7 +2866,7 @@ body {
     print-color-adjust: exact !important;
   }
 
-  /* إخفاء كل ما هو خارج كشف الحساب وعناصر التحكم */
+  /* إخفاء كل ما هو خارج كشف الحساب وعناصر التحكم والحشو */
   .app-header,
   #landing-page-view,
   #admin-view,
@@ -2609,6 +2877,8 @@ body {
   .no-print,
   .statement-top-row,
   .progress-container,
+  .official-print-footer,
+  .statement-alert-strip,
   button {
     display: none !important;
   }
@@ -2635,15 +2905,17 @@ body {
     max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
-  /* 1. ترويسة الطباعة الرسمية (الهوية البصرية لنظام الجمعيات) */
+  /* 1. ترويسة الطباعة الرسمية (أفقية واسعة) */
   .official-print-header {
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
     border-bottom: 2px solid #059669 !important;
-    padding-bottom: 3mm !important;
+    padding-bottom: 2.5mm !important;
     margin-bottom: 3.5mm !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
@@ -2661,7 +2933,7 @@ body {
   }
 
   .print-org-name {
-    font-size: 13pt !important;
+    font-size: 13.5pt !important;
     font-weight: 900 !important;
     color: #0f172a !important;
     margin: 0 !important;
@@ -2686,9 +2958,9 @@ body {
     border: 1px solid #059669 !important;
     color: #059669 !important;
     font-weight: 800 !important;
-    padding: 1px 5px !important;
+    padding: 1px 6px !important;
     border-radius: 4px !important;
-    font-size: 7.5pt !important;
+    font-size: 8pt !important;
     margin-bottom: 1mm !important;
   }
 
@@ -2696,13 +2968,13 @@ body {
     margin-top: 0.5mm !important;
   }
 
-  /* 2. بيانات المشترك الأساسية */
+  /* 2. بيانات المشترك الأساسية (شريط أفقي) */
   .official-statement-banner {
     background: #f8fafc !important;
     border: 1px solid #cbd5e1 !important;
     border-right: 4px solid #059669 !important;
     color: #0f172a !important;
-    padding: 2.5mm 3.5mm !important;
+    padding: 2.5mm 4mm !important;
     margin-bottom: 3.5mm !important;
     border-radius: 5px !important;
     page-break-inside: avoid !important;
@@ -2716,34 +2988,34 @@ body {
   .statement-member-details {
     display: grid !important;
     grid-template-columns: repeat(4, 1fr) !important;
-    gap: 2mm !important;
+    gap: 3mm !important;
   }
 
   .member-detail-box {
     background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
-    padding: 1.5mm 2.5mm !important;
+    padding: 1.8mm 3mm !important;
     border-radius: 4px !important;
   }
 
   .detail-item-title {
-    font-size: 7pt !important;
+    font-size: 7.5pt !important;
     color: #64748b !important;
     font-weight: 700 !important;
   }
 
   .detail-item-value {
-    font-size: 9.5pt !important;
+    font-size: 10pt !important;
     font-weight: 800 !important;
     color: #0f172a !important;
     margin-top: 0.5mm !important;
   }
 
-  /* 3. إحصائيات سريعة في الطباعة */
+  /* 3. إحصائيات سريعة في الطباعة (4 كروت موزعة أفقياً) */
   .stats-grid, .member-quick-stats {
     display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 2.5mm !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 3mm !important;
     margin-bottom: 3.5mm !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
@@ -2753,11 +3025,16 @@ body {
     background: #ffffff !important;
     border: 1px solid #cbd5e1 !important;
     border-radius: 5px !important;
-    padding: 2mm 3mm !important;
+    padding: 2.2mm 3.5mm !important;
     color: #0f172a !important;
     display: flex !important;
     align-items: center !important;
   }
+
+  .stat-card.emerald { border-right: 3.5px solid #059669 !important; }
+  .stat-card.rose { border-right: 3.5px solid #dc2626 !important; }
+  .stat-card.gold { border-right: 3.5px solid #d97706 !important; }
+  .stat-card.blue { border-right: 3.5px solid #0284c7 !important; }
 
   .stat-icon {
     display: none !important;
@@ -2777,228 +3054,173 @@ body {
     margin-top: 0.5mm !important;
   }
 
-  /* 4. كروت وتفاصيل الجمعيات */
-  .member-gam-card {
-    background: #ffffff !important;
-    border: 1px solid #cbd5e1 !important;
-    border-top: 2.5px solid #059669 !important;
-    border-radius: 5px !important;
-    padding: 3mm 3.5mm !important;
-    margin-bottom: 3.5mm !important;
-    color: #0f172a !important;
+  /* 4. الكشف المالي الموحد (تنسيق أفقي رحب وواضح جداً) */
+  .unified-statement-card {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
 
-  .member-gam-header {
-    border-bottom: 1px solid #e2e8f0 !important;
-    padding-bottom: 1.5mm !important;
-    margin-bottom: 2.5mm !important;
+  .table-title-row {
+    margin: 2mm 0 1.5mm 0 !important;
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
-  }
-
-  .gam-card-name {
-    font-size: 11pt !important;
-    color: #0f172a !important;
-    font-weight: 900 !important;
-    margin: 0 !important;
-  }
-
-  .gam-turn-meta {
-    font-size: 8pt !important;
-    color: #334155 !important;
-    margin-top: 0.5mm !important;
-  }
-
-  .share-tag {
-    font-size: 7.5pt !important;
-    padding: 1px 4px !important;
-    border-radius: 3px !important;
-    border: 1px solid #94a3b8 !important;
-    background: #f1f5f9 !important;
-    color: #334155 !important;
-  }
-
-  .gam-payout-pill {
-    background: #f8fafc !important;
-    border: 1px solid #d97706 !important;
-    color: #b45309 !important;
-    padding: 1.5mm 3mm !important;
-    border-radius: 4px !important;
-    font-size: 8.5pt !important;
-    font-weight: 800 !important;
-  }
-
-  .payout-pill-label {
-    color: #78350f !important;
-    font-size: 7pt !important;
-  }
-
-  .payout-pill-val {
-    color: #b45309 !important;
-    font-size: 10pt !important;
-  }
-
-  /* شريط ملخص الجمعية في الطباعة */
-  .member-stats-row {
-    display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 2mm !important;
-    margin-bottom: 2.5mm !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
-
-  .member-stat-box {
-    background: #f8fafc !important;
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 4px !important;
-    padding: 1.5mm 2.5mm !important;
-    text-align: center !important;
-  }
-
-  .member-stat-box .box-title {
-    font-size: 7pt !important;
-    color: #64748b !important;
-    font-weight: 700 !important;
-  }
-
-  .member-stat-box .box-num {
+  .unified-table-heading {
     font-size: 9pt !important;
-    font-weight: 800 !important;
+    font-weight: 900 !important;
     color: #0f172a !important;
-    margin-top: 0.5mm !important;
+    margin: 0 !important;
   }
 
-  .member-schedule-header h4 {
-    font-size: 8.5pt !important;
-    font-weight: 800 !important;
-    color: #0f172a !important;
-    margin: 0 0 1.5mm 0 !important;
-  }
-
-  /* 5. جدول الأقساط (تنسيق مدمج فائق الوضوح وخفيف بالحبر) */
-  .table-container, .member-table-wrap {
+  .statement-table-wrap {
     overflow: visible !important;
     margin-bottom: 0 !important;
     background: transparent !important;
     border: none !important;
   }
 
-  .gam-table, .member-statement-table {
+  .master-statement-table {
     width: 100% !important;
     border-collapse: collapse !important;
-    font-size: 8pt !important;
+    font-size: 8.5pt !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
 
-  .gam-table th {
+  .master-statement-table th {
     background: #f1f5f9 !important;
     color: #0f172a !important;
     font-weight: 800 !important;
-    padding: 1.5mm 2.5mm !important;
+    padding: 2.2mm 2.5mm !important;
     border: 1px solid #cbd5e1 !important;
     text-align: center !important;
-    font-size: 8pt !important;
+    font-size: 8.5pt !important;
   }
 
-  .gam-table td {
-    padding: 1.2mm 2.5mm !important;
+  .master-statement-table td {
+    padding: 2.2mm 2.5mm !important;
     border: 1px solid #e2e8f0 !important;
     color: #0f172a !important;
     text-align: center !important;
     background: #ffffff !important;
+    font-size: 8.5pt !important;
+    vertical-align: middle !important;
   }
 
-  .gam-table tr {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
+  .table-gam-name {
+    font-size: 8.8pt !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    text-align: right !important;
+  }
+  .table-gam-subtag {
+    margin-top: 0.5mm !important;
+    text-align: right !important;
+  }
+  .tag-partner, .tag-full {
+    font-size: 7.2pt !important;
+    padding: 0.3mm 2mm !important;
+    border-radius: 2px !important;
+    border: 1px solid #94a3b8 !important;
+    background: #f8fafc !important;
+    color: #334155 !important;
+    display: inline-block !important;
   }
 
-  /* شارات الحالة في الطباعة: خطوط ناعمة موفرة للحبر */
-  .status-badge {
-    display: inline-flex !important;
-    padding: 0.3mm 2.5mm !important;
-    border-radius: 3px !important;
+  .turn-meta-val {
+    font-size: 8pt !important;
+    color: #0f172a !important;
+  }
+  .payout-sub-meta {
     font-size: 7.5pt !important;
-    font-weight: 700 !important;
+    color: #475569 !important;
+    margin-top: 0.5mm !important;
+  }
+  .payout-status-tag {
+    font-size: 7.2pt !important;
+    padding: 0.2mm 1.5mm !important;
+    border-radius: 2px !important;
+    display: inline-block !important;
+  }
+  .payout-status-tag.received {
+    border: 1px solid #059669 !important;
+    color: #059669 !important;
+    background: transparent !important;
+  }
+  .payout-status-tag.pending {
+    border: 1px solid #d97706 !important;
+    color: #b45309 !important;
     background: transparent !important;
   }
 
-  .status-badge.paid {
+  .statement-status-badge {
+    display: inline-flex !important;
+    padding: 0.4mm 2.5mm !important;
+    border-radius: 3px !important;
+    font-size: 7.8pt !important;
+    font-weight: 800 !important;
+    background: transparent !important;
+  }
+  .statement-status-badge.paid {
     border: 1px solid #059669 !important;
     color: #059669 !important;
   }
-
-  .status-badge.payout {
+  .statement-status-badge.payout {
     border: 1px solid #d97706 !important;
     color: #b45309 !important;
-    font-weight: 800 !important;
   }
-
-  .status-badge.future {
+  .statement-status-badge.future {
     border: 1px solid #94a3b8 !important;
     color: #64748b !important;
   }
-
-  .status-badge.unpaid {
+  .statement-status-badge.unpaid {
     border: 1px solid #dc2626 !important;
     color: #dc2626 !important;
-    font-weight: 800 !important;
   }
 
-  .col-note {
-    font-size: 7.5pt !important;
-    color: #475569 !important;
-  }
-
-  /* 6. التذييل والاعتماد الرسمي للطباعة */
-  .official-print-footer {
-    display: block !important;
-    margin-top: 4mm !important;
-    padding-top: 2.5mm !important;
-    border-top: 1.5px dashed #cbd5e1 !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
-
-  .print-footer-notice {
-    font-size: 7pt !important;
-    color: #64748b !important;
-    line-height: 1.35 !important;
-    margin-bottom: 3.5mm !important;
+  .mini-progress-wrapper {
     display: flex !important;
+    flex-direction: column !important;
     align-items: center !important;
-    gap: 4px !important;
+    gap: 0.5mm !important;
   }
-
-  .print-signatures-grid {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 12mm !important;
-    padding-top: 1.5mm !important;
-  }
-
-  .print-sig-col {
-    border: 1px solid #e2e8f0 !important;
-    background: #f8fafc !important;
-    border-radius: 4px !important;
-    padding: 2.5mm 3.5mm !important;
-  }
-
-  .print-sig-label {
-    font-size: 7.5pt !important;
+  .mini-progress-text {
+    font-size: 7.8pt !important;
     font-weight: 800 !important;
-    color: #334155 !important;
-    margin-bottom: 4.5mm !important;
+    color: #0f172a !important;
+  }
+  .mini-progress-bar {
+    width: 40px !important;
+    height: 3.5px !important;
+    background: #e2e8f0 !important;
+    border-radius: 2px !important;
+  }
+  .mini-progress-fill {
+    height: 100% !important;
+    background: #059669 !important;
+    border-radius: 2px !important;
   }
 
-  .print-sig-space {
-    font-size: 7.5pt !important;
-    color: #94a3b8 !important;
+  .col-subtext {
+    font-size: 7.2pt !important;
+    color: #64748b !important;
+  }
+
+  .master-total-row td {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    font-weight: 900 !important;
+    border-top: 2px solid #059669 !important;
+    font-size: 8.8pt !important;
+    padding: 2.5mm 2.5mm !important;
   }
 }
 

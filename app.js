@@ -81,7 +81,8 @@ function getSmartCurrentMonthKey(gam) {
 
 /**
  * مزامنة حالات السداد مع الشهر المعروض الحالي
- * تحويل الشهور حتى الشهر الحالي من "future" إلى "unpaid" دون المساس بأي مدفوعات مسجلة (paid أو payout)
+ * تحويل الشهور حتى الشهر الحالي من "future" إلى "unpaid" (متأخر)
+ * مع الحفاظ التام 100% على أي حالات تم سدادها (paid) أو قبضها (payout) التي عدلها المدير يدوياً
  */
 function syncMonthPaymentStatuses(gam, monthKey) {
   if (!gam || !gam.months || !gam.members) return;
@@ -91,18 +92,48 @@ function syncMonthPaymentStatuses(gam, monthKey) {
   gam.currentMonthKey = monthKey;
 
   gam.members.forEach(m => {
+    if (m.isVacant) return;
     if (m.payments) {
       gam.months.forEach((mo, mIdx) => {
-        if (m.payments[mo.key]) {
+        if (!m.payments[mo.key]) {
+          const count = m.isShared ? 2 : 1;
+          m.payments[mo.key] = Array(count).fill(mIdx <= curMonthIdx ? "unpaid" : "future");
+        } else {
           m.payments[mo.key] = m.payments[mo.key].map(st => {
+            // الشهور حتى الشهر الحالي: أي حالة لم تستحق (future) تصبح متأخر (unpaid) تلقائياً
             if (mIdx <= curMonthIdx && st === "future") return "unpaid";
+            // الشهور القادمة بعد الشهر الحالي: أي حالة متأخر تعود إلى لم تستحق (future)
             if (mIdx > curMonthIdx && st === "unpaid") return "future";
+            // ما قام المدير بتحديده كـ "تم" (paid) أو "قبض" (payout) يظل كما هو تماماً دون أي تغيير
             return st;
           });
         }
       });
     }
   });
+}
+
+/**
+ * مزامنة كافة الجمعيات في النظام تلقائياً مع الشهر الجاري بالتقويم
+ * بمجرد حلول الشهر الجديد تصبح الحالات "متأخر" تلقائياً ما لم يحدد المدير خلاف ذلك
+ */
+function syncAllGam3eyatPaymentStatuses(data) {
+  if (!data || !Array.isArray(data.gam3eyat)) return false;
+  let modified = false;
+
+  data.gam3eyat.forEach(gam => {
+    if (!gam.months || gam.months.length === 0) return;
+    const smartMonth = getSmartCurrentMonthKey(gam);
+    const smartMonthIdx = gam.months.findIndex(m => m.key === smartMonth);
+    const savedIdx = gam.currentMonthKey ? gam.months.findIndex(m => m.key === gam.currentMonthKey) : -1;
+
+    // إذا تقدم التقويم الزمني إلى شهر جديد وكان متقدماً على الشهر المحفوظ، نعتمد الشهر الجديد
+    const targetMonthKey = (savedIdx < smartMonthIdx || savedIdx === -1) ? smartMonth : gam.currentMonthKey;
+    syncMonthPaymentStatuses(gam, targetMonthKey);
+    modified = true;
+  });
+
+  return modified;
 }
 
 let appState = {
@@ -128,8 +159,8 @@ window.setAppData = setAppData;
 
 if (appData.gam3eyat && appData.gam3eyat[0]) {
   appState.currentGamId = appData.gam3eyat[0].id;
-  appState.currentMonthKey = getSmartCurrentMonthKey(appData.gam3eyat[0]);
-  syncMonthPaymentStatuses(appData.gam3eyat[0], appState.currentMonthKey);
+  syncAllGam3eyatPaymentStatuses(appData);
+  appState.currentMonthKey = appData.gam3eyat[0].currentMonthKey || getSmartCurrentMonthKey(appData.gam3eyat[0]);
 }
 
 // توليد كود سري عشوائي فريد مكون من 4 أرقام
@@ -160,7 +191,7 @@ function loadData() {
   }
 
   // فحص ذكي للترقية التلقائية: إذا كانت البيانات غير موجودة أو قديمة أو تفتقر للمشتركين الـ 19 المعتمدين
-  const targetVersion = (typeof INITIAL_DATA !== "undefined" && INITIAL_DATA.dataVersion) ? INITIAL_DATA.dataVersion : "2026.10.05_v3.4";
+  const targetVersion = (typeof INITIAL_DATA !== "undefined" && INITIAL_DATA.dataVersion) ? INITIAL_DATA.dataVersion : "2026.10.05_v3.9";
   const needsInitialData = !data || 
     !data.gam3eyat || 
     !Array.isArray(data.gam3eyat) || 
@@ -181,8 +212,13 @@ function loadData() {
   // تنظيف تلقائي للبيانات وإزالة أي مشتركين وهميين
   if (data && data.gam3eyat) {
     let modified = false;
+
+    // 1. مزامنة فورية لحالات الشهور مع التقويم الحقيقي لجميع الجمعيات
+    syncAllGam3eyatPaymentStatuses(data);
+    modified = true;
+
     data.gam3eyat.forEach(gam => {
-      // 1. تحويل المشتركين الوهميين "عضو دور X" إلى أدوار شاغرة
+      // 2. تحويل المشتركين الوهميين "عضو دور X" إلى أدوار شاغرة
       gam.members.forEach(m => {
         if (m.names.some(n => /^عضو دور \d+$/i.test((n || "").trim()))) {
           m.isVacant = true;
@@ -193,7 +229,7 @@ function loadData() {
         }
       });
 
-      // 2. إذا كانت هناك أدوار زائدة عن عدد الشهور (مثل الصف 13 في جمعية 12 شهراً)
+      // 3. إذا كانت هناك أدوار زائدة عن عدد الشهور (مثل الصف 13 في جمعية 12 شهراً)
       if (gam.months && gam.members.length > gam.months.length) {
         const extraMembers = gam.members.slice(gam.months.length);
         gam.members = gam.members.slice(0, gam.months.length);
@@ -211,33 +247,6 @@ function loadData() {
               vacantSlot.pins = extra.pins || ["1234"];
               vacantSlot.shares = extra.shares || [gam.shareAmount];
             }
-          }
-        });
-      }
-
-      // 3. ضبط تصنيف الشهور التي لم يأتِ دورها بعد إلى "لم تستحق" (future)
-      const curMonthKey = gam.currentMonthKey || (gam.months[0] && gam.months[0].key);
-      const curMonthIdx = gam.months.findIndex(mo => mo.key === curMonthKey);
-      if (curMonthIdx !== -1) {
-        gam.members.forEach(m => {
-          if (m.payments) {
-            gam.months.forEach((mo, mIdx) => {
-              if (m.payments[mo.key]) {
-                m.payments[mo.key] = m.payments[mo.key].map(st => {
-                  // الشهور اللاحقة للشهر النشط تتحول تلقائياً من "متأخر" إلى "لم تستحق"
-                  if (mIdx > curMonthIdx && st === "unpaid") {
-                    modified = true;
-                    return "future";
-                  }
-                  // الشهور الحالية والسابقة إذا كانت "لم تستحق" تصبح "متأخر"
-                  if (mIdx <= curMonthIdx && st === "future") {
-                    modified = true;
-                    return "unpaid";
-                  }
-                  return st;
-                });
-              }
-            });
           }
         });
       }
@@ -1523,10 +1532,14 @@ function renderMemberPortfolio() {
     }
   }
 
-  // 2. تجميع وحساب بيانات الجمعيات التي يشارك بها
+  // 2. تجميع وحساب بيانات الجمعيات والاشتراكات (مع مزامنة الشهور تلقائياً)
+  syncAllGam3eyatPaymentStatuses(appData);
   const memberGamEntries = [];
   let totalAllPaid = 0;
   let totalAllRemaining = 0;
+  let totalAllMonthlyShare = 0;
+  let totalAllPayout = 0;
+  let totalAllObligation = 0;
 
   appData.gam3eyat.forEach(gam => {
     gam.members.forEach(m => {
@@ -1540,17 +1553,32 @@ function renderMemberPortfolio() {
         const payoutAmount = isShared ? (gam.totalPayout / 2) : gam.totalPayout;
 
         let gamPaid = 0;
+        let paidMonthsCount = 0;
+        let remainingMonthsCount = 0;
+
         gam.months.forEach(month => {
           const statuses = m.payments[month.key] || [];
           const mySt = statuses[matchIndex];
           if (mySt === "paid" || mySt === "payout") {
             gamPaid += myShare;
+            paidMonthsCount++;
+          } else {
+            remainingMonthsCount++;
           }
         });
 
         const gamRemaining = Math.max(0, totalObligation - gamPaid);
         totalAllPaid += gamPaid;
         totalAllRemaining += gamRemaining;
+        totalAllMonthlyShare += myShare;
+        totalAllPayout += payoutAmount;
+        totalAllObligation += totalObligation;
+
+        // فحص هل موعد الاستلام قد حان/مضى أم قادم
+        const curMonthKey = getSmartCurrentMonthKey(gam);
+        const payoutMonthIdx = gam.months.findIndex(mo => mo.key === m.turnMonth);
+        const curMonthIdx = gam.months.findIndex(mo => mo.key === curMonthKey);
+        const isPayoutReceived = (payoutMonthIdx !== -1 && curMonthIdx !== -1 && curMonthIdx >= payoutMonthIdx);
 
         memberGamEntries.push({
           gam: gam,
@@ -1561,16 +1589,22 @@ function renderMemberPortfolio() {
           totalObligation: totalObligation,
           gamPaid: gamPaid,
           gamRemaining: gamRemaining,
-          payoutAmount: payoutAmount
+          payoutAmount: payoutAmount,
+          paidMonthsCount: paidMonthsCount,
+          remainingMonthsCount: remainingMonthsCount,
+          totalMonthsCount: totalMonths,
+          isPayoutReceived: isPayoutReceived
         });
       }
     });
   });
 
   const curCurrency = appData.currency || "ر.س";
-  // تحديث إجمالي المدفوع والمتبقي
+  // تحديث إجمالي المدفوع والمتبقي والقبض
   document.getElementById("member-stat-all-paid").textContent = `${totalAllPaid.toLocaleString()} ${curCurrency}`;
   document.getElementById("member-stat-all-remaining").textContent = `${totalAllRemaining.toLocaleString()} ${curCurrency}`;
+  const payoutCardEl = document.getElementById("member-stat-all-payout");
+  if (payoutCardEl) payoutCardEl.textContent = `${totalAllPayout.toLocaleString()} ${curCurrency}`;
 
   // حساب الموقف المالي لشهر اليوم الحالي للمشترك عبر جميع جمعياته
   let curMonthDueAmount = 0;
@@ -1578,6 +1612,7 @@ function renderMemberPortfolio() {
   let curMonthPayoutCount = 0;
   let curMonthPayoutTotal = 0;
   const curArabicMonthName = arabicMonths[today.getMonth()];
+  const dueItems = [];
 
   memberGamEntries.forEach(entry => {
     const gam = entry.gam;
@@ -1590,6 +1625,11 @@ function renderMemberPortfolio() {
 
     if (st === "unpaid") {
       curMonthDueAmount += myShare;
+      dueItems.push({
+        gamName: gam.name,
+        amount: myShare,
+        type: entry.partnerName ? `نصف سهم (مع ${entry.partnerName})` : "سهم كامل"
+      });
     } else if (st === "paid") {
       curMonthPaidCount++;
     } else if (st === "payout") {
@@ -1608,9 +1648,9 @@ function renderMemberPortfolio() {
 
   if (monthVal) {
     if (curMonthDueAmount > 0) {
-      monthVal.innerHTML = `<span style="color: #f43f5e; font-weight: 800;">⚠️ مطلوب: ${curMonthDueAmount.toLocaleString()} ${curCurrency}</span>`;
+      monthVal.innerHTML = `<span style="color: #f43f5e; font-weight: 800;">❌ متأخر: ${curMonthDueAmount.toLocaleString()} ${curCurrency}</span>`;
       if (monthCard) monthCard.className = "stat-card rose";
-      if (monthIcon) { monthIcon.className = "stat-icon rose"; monthIcon.textContent = "⚠️"; }
+      if (monthIcon) { monthIcon.className = "stat-icon rose"; monthIcon.textContent = "❌"; }
     } else if (curMonthPayoutCount > 0) {
       monthVal.innerHTML = `<span style="color: #10b981; font-weight: 800;">🎁 شهر قبضك (+${curMonthPayoutTotal.toLocaleString()} ${curCurrency})</span>`;
       if (monthCard) monthCard.className = "stat-card emerald";
@@ -1626,7 +1666,7 @@ function renderMemberPortfolio() {
     }
   }
 
-  // بناء كروت الجمعيات الخاصة بالعضو
+  // بناء الكشف المالي الموحد السلس بدون حشو أو تكرار
   const container = document.getElementById("member-gam3eyat-container");
   container.innerHTML = "";
 
@@ -1635,132 +1675,168 @@ function renderMemberPortfolio() {
     return;
   }
 
-  memberGamEntries.forEach(entry => {
+  // 1. إعداد صفوف الجدول المالي الموحد (Master Summary Table)
+  let masterRowsHtml = "";
+  memberGamEntries.forEach((entry, idx) => {
     const gam = entry.gam;
     const m = entry.memberRecord;
     const subIdx = entry.subIndex;
-    const myShare = entry.myShare;
     const progressPercent = Math.min(100, Math.round((entry.gamPaid / entry.totalObligation) * 100)) || 0;
-
     const payoutMonthObj = gam.months.find(mo => mo.key === m.turnMonth);
     const payoutName = payoutMonthObj ? payoutMonthObj.name : m.payoutDate;
 
     const curMonthKey = getSmartCurrentMonthKey(gam);
-    const curMonthObj = gam.months.find(mo => mo.key === curMonthKey) || gam.months[0];
     const curStatuses = m.payments[curMonthKey] || ["unpaid"];
     const curSt = curStatuses[subIdx] || "unpaid";
 
-    let curBadge = "";
-    if (curSt === "payout") curBadge = `<span class="badge-cur payout">🎁 شهر القبض</span>`;
-    else if (curSt === "paid") curBadge = `<span class="badge-cur paid">✅ تم السداد</span>`;
-    else if (curSt === "future") curBadge = `<span class="badge-cur future">⏳ لم يستحق بعد</span>`;
-    else curBadge = `<span class="badge-cur unpaid">❌ مطلوب سداده</span>`;
+    let curStBadge = "";
+    if (curSt === "payout") {
+      curStBadge = `<span class="statement-status-badge payout">🎁 شهر القبض</span>`;
+    } else if (curSt === "paid") {
+      curStBadge = `<span class="statement-status-badge paid">✅ مسدد</span>`;
+    } else if (curSt === "future") {
+      curStBadge = `<span class="statement-status-badge future">⏳ لم يستحق</span>`;
+    } else {
+      curStBadge = `<span class="statement-status-badge unpaid">❌ متأخر (${entry.myShare.toLocaleString()} ${curCurrency})</span>`;
+    }
 
-    const card = document.createElement("div");
-    card.className = "member-gam-card";
+    const payoutStatusBadge = entry.isPayoutReceived 
+      ? `<span class="payout-status-tag received">✅ تم القبض</span>` 
+      : `<span class="payout-status-tag pending">⏳ موعد قادم</span>`;
 
-    let monthsRowsHtml = "";
-    gam.months.forEach(mo => {
-      const isPayoutTurn = mo.key === m.turnMonth;
-      const statuses = m.payments[mo.key] || ["unpaid"];
-      const st = statuses[subIdx] || "unpaid";
-
-      let badge = "";
-      let note = "-";
-
-      if (isPayoutTurn || st === "payout") {
-        badge = `<span class="status-badge payout"><span class="badge-icon">🎁</span><span class="badge-text">شهر القبض</span></span>`;
-        note = `استلام مبلغ ${entry.payoutAmount.toLocaleString()} ${curCurrency}`;
-      } else if (st === "paid") {
-        badge = `<span class="status-badge paid"><span class="badge-icon">✅</span><span class="badge-text">مسدد</span></span>`;
-        note = "تم الدفع";
-      } else if (st === "future") {
-        badge = `<span class="status-badge future"><span class="badge-icon">⏳</span><span class="badge-text">قادم</span></span>`;
-        note = "لم يحن بعد";
-      } else {
-        badge = `<span class="status-badge unpaid"><span class="badge-icon">❌</span><span class="badge-text">مطلوب</span></span>`;
-        note = "قسط مستحق";
-      }
-
-      monthsRowsHtml += `
-        <tr>
-          <td><strong>${mo.name}</strong></td>
-          <td><strong>${myShare.toLocaleString()} ${curCurrency}</strong></td>
-          <td>${badge}</td>
-          <td class="col-note">${note}</td>
-        </tr>
-      `;
-    });
-
-    card.innerHTML = `
-      <div class="member-gam-header">
-        <div class="gam-info-col">
-          <div class="gam-title-row">
-            <h3 class="gam-card-name">${gam.name}</h3>
-            ${entry.partnerName ? `<span class="share-tag partner">🤝 نصف سهم (مع ${entry.partnerName})</span>` : '<span class="share-tag full">🌟 سهم كامل</span>'}
+    masterRowsHtml += `
+      <tr>
+        <td class="col-center"><strong>${idx + 1}</strong></td>
+        <td>
+          <div class="table-gam-name">${gam.name}</div>
+          <div class="table-gam-subtag">
+            ${entry.partnerName ? `<span class="tag-partner">🤝 نصف سهم (مع ${entry.partnerName})</span>` : `<span class="tag-full">🌟 سهم كامل</span>`}
           </div>
-          <div class="gam-turn-meta">
-            <span>الدور رقم: <strong>(${m.turn})</strong></span>
-            <span>•</span>
-            <span>موعد الاستلام: <strong>${payoutName}</strong></span>
+        </td>
+        <td class="col-num"><strong>${entry.myShare.toLocaleString()} ${curCurrency}</strong></td>
+        <td>
+          <div class="turn-meta-val">الدور: <strong>(${m.turn})</strong> • ${payoutName}</div>
+          <div class="payout-sub-meta">مبلغ القبض: <strong>${entry.payoutAmount.toLocaleString()} ${curCurrency}</strong> ${payoutStatusBadge}</div>
+        </td>
+        <td class="col-num col-success">
+          <strong>${entry.gamPaid.toLocaleString()} ${curCurrency}</strong>
+          <div class="col-subtext">(${entry.paidMonthsCount} من ${entry.totalMonthsCount} شهر)</div>
+        </td>
+        <td class="col-num col-danger">
+          <strong>${entry.gamRemaining.toLocaleString()} ${curCurrency}</strong>
+          <div class="col-subtext">(${entry.remainingMonthsCount} شهر متبقي)</div>
+        </td>
+        <td class="col-center">${curStBadge}</td>
+        <td class="col-center">
+          <div class="mini-progress-wrapper">
+            <span class="mini-progress-text">${progressPercent}%</span>
+            <div class="mini-progress-bar">
+              <div class="mini-progress-fill" style="width: ${progressPercent}%;"></div>
+            </div>
           </div>
-        </div>
-        <div class="gam-payout-pill">
-          <span class="payout-pill-label">مبلغ القبض:</span>
-          <span class="payout-pill-val">${entry.payoutAmount.toLocaleString()} ${curCurrency}</span>
-        </div>
-      </div>
-
-      <!-- ملخص الأرقام السريع لهذه الجمعية -->
-      <div class="member-stats-row">
-        <div class="member-stat-box success">
-          <div class="box-title">المدفوع بهذه الجمعية</div>
-          <div class="box-num">${entry.gamPaid.toLocaleString()} ${curCurrency}</div>
-        </div>
-        <div class="member-stat-box danger">
-          <div class="box-title">المتبقي عليك</div>
-          <div class="box-num">${entry.gamRemaining.toLocaleString()} ${curCurrency}</div>
-        </div>
-        <div class="member-stat-box">
-          <div class="box-title">موقف شهر (${curMonthObj.name})</div>
-          <div class="box-num">${curBadge}</div>
-        </div>
-      </div>
-
-      <!-- مؤشر التقدم -->
-      <div class="progress-container">
-        <div class="progress-label-row">
-          <span>نسبة إنجاز أقساط الجمعية:</span>
-          <span>${progressPercent}%</span>
-        </div>
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" style="width: ${progressPercent}%;"></div>
-        </div>
-      </div>
-
-      <!-- جدول الأقساط -->
-      <div class="member-schedule-header">
-        <h4>📋 جدول الأقساط والمواعيد</h4>
-      </div>
-      <div class="table-container member-table-wrap">
-        <table class="gam-table member-statement-table">
-          <thead>
-            <tr>
-              <th>الشهر</th>
-              <th>قيمة القسط</th>
-              <th>الحالة</th>
-              <th>ملاحظات</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${monthsRowsHtml}
-          </tbody>
-        </table>
-      </div>
+        </td>
+      </tr>
     `;
-
-    container.appendChild(card);
   });
+
+  const overallProgress = totalAllObligation > 0 ? Math.min(100, Math.round((totalAllPaid / totalAllObligation) * 100)) : 0;
+
+  // 2. بناء وتجميع بطاقة الكشف الموحد المباشرة
+  const masterCard = document.createElement("div");
+  masterCard.className = "unified-statement-card";
+  masterCard.innerHTML = `
+    <!-- جدول ملخص الاشتراكات المعتمد -->
+    <div class="table-title-row">
+      <h4 class="unified-table-heading">
+        <span>📊</span> بيان الجمعيات والالتزامات المالية
+      </h4>
+    </div>
+
+    <div class="table-container statement-table-wrap">
+      <table class="gam-table master-statement-table">
+        <thead>
+          <tr>
+            <th style="width: 35px;">#</th>
+            <th>الجمعية والاشتراك</th>
+            <th>القسط الشهري</th>
+            <th>الدور وموعد القبض</th>
+            <th>المدفوع حتى الآن</th>
+            <th>المتبقي عليك</th>
+            <th>موقف شهر (${curArabicMonthName})</th>
+            <th style="width: 85px;">نسبة الإنجاز</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${masterRowsHtml}
+        </tbody>
+        <tfoot>
+          <tr class="master-total-row">
+            <td colspan="2" style="text-align: right; font-weight: 900;">الإجمالي العام الموحد:</td>
+            <td class="col-num"><strong>${totalAllMonthlyShare.toLocaleString()} ${curCurrency}</strong></td>
+            <td><strong>إجمالي القبض: ${totalAllPayout.toLocaleString()} ${curCurrency}</strong></td>
+            <td class="col-num col-success"><strong>${totalAllPaid.toLocaleString()} ${curCurrency}</strong></td>
+            <td class="col-num col-danger"><strong>${totalAllRemaining.toLocaleString()} ${curCurrency}</strong></td>
+            <td class="col-center"><strong>${curMonthDueAmount > 0 ? `متأخر: ${curMonthDueAmount.toLocaleString()} ${curCurrency}` : '✅ مسدد'}</strong></td>
+            <td class="col-center"><strong>${overallProgress}%</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- 3. زر تفاعلي للشاشة فقط لعرض التفصيل الزمني لمن يرغب (مخفي تماماً بالطباعة) -->
+    <div class="detail-toggle-wrapper no-print">
+      <button type="button" id="btn-toggle-months-timeline" class="btn btn-outline btn-sm">
+        <span>🔍</span> <span id="toggle-timeline-text">عرض التفصيل الزمني للشهور (اختياري للشاشة فقط)</span>
+      </button>
+    </div>
+
+    <!-- 4. حاوية التفاصيل الشهرية (مخفية افتراضياً ومخفية تماماً في الطباعة) -->
+    <div id="timeline-detail-container" class="timeline-detail-drawer no-print" style="display: none;"></div>
+  `;
+
+  container.appendChild(masterCard);
+
+  // إعداد المحتوى التفصيلي لمن يضغط زر التفاصيل
+  const toggleBtn = document.getElementById("btn-toggle-months-timeline");
+  const drawer = document.getElementById("timeline-detail-container");
+  const toggleText = document.getElementById("toggle-timeline-text");
+
+  if (toggleBtn && drawer) {
+    toggleBtn.onclick = () => {
+      const isHidden = drawer.style.display === "none";
+      if (isHidden) {
+        drawer.style.display = "block";
+        toggleText.textContent = "إخفاء التفصيل الزمني للشهور";
+        if (!drawer.hasChildNodes()) {
+          let detailedHtml = "";
+          memberGamEntries.forEach(entry => {
+            const gam = entry.gam;
+            const m = entry.memberRecord;
+            const subIdx = entry.subIndex;
+            detailedHtml += `
+              <div class="detailed-gam-box">
+                <h5 style="color: #38bdf8; margin: 0 0 0.65rem 0; font-size: 0.9rem; font-weight: 800;">📅 تفصيل أشهر ${gam.name}</h5>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.45rem;">
+                  ${gam.months.map(mo => {
+                    const st = (m.payments[mo.key] || [])[subIdx] || "unpaid";
+                    let bgCol = st === "paid" ? "rgba(16, 185, 129, 0.15)" : (st === "payout" ? "rgba(245, 158, 11, 0.2)" : (st === "future" ? "rgba(148, 163, 184, 0.15)" : "rgba(244, 63, 94, 0.15)"));
+                    let textCol = st === "paid" ? "#34d399" : (st === "payout" ? "#fbbf24" : (st === "future" ? "#94a3b8" : "#f87171"));
+                    let borderCol = st === "paid" ? "#10b981" : (st === "payout" ? "#f59e0b" : (st === "future" ? "#64748b" : "#f43f5e"));
+                    let label = st === "paid" ? "مسدد ✅" : (st === "payout" ? "قبض 🎁" : (st === "future" ? "قادم ⏳" : "متأخر ❌"));
+                    return `<span style="padding: 0.25rem 0.55rem; border-radius: 6px; font-size: 0.75rem; background: ${bgCol}; color: ${textCol}; border: 1px solid ${borderCol};"><strong>${mo.name}:</strong> ${label}</span>`;
+                  }).join('')}
+                </div>
+              </div>
+            `;
+          });
+          drawer.innerHTML = detailedHtml;
+        }
+      } else {
+        drawer.style.display = "none";
+        toggleText.textContent = "عرض التفصيل الزمني للشهور (اختياري للشاشة فقط)";
+      }
+    };
+  }
 }
 
 // ==========================================
@@ -2757,7 +2833,7 @@ function renderWhatsAppUnpaidList() {
             <div>
               <div class="unpaid-name">${personName}</div>
               <div class="unpaid-meta">
-                <span class="unpaid-share-badge">المطلوب: ${share.toLocaleString()} ${curCurrency}</span>
+                <span class="unpaid-share-badge">المتأخر: ${share.toLocaleString()} ${curCurrency}</span>
                 <span class="unpaid-phone-tag">${phone ? `📱 ${phone}` : '<span style="color:#ef4444;">⚠️ جوال غير مسجل</span>'}</span>
               </div>
             </div>
