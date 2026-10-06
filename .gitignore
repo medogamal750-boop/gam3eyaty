@@ -1,0 +1,7 @@
+# ملفات ومجلدات مستبعدة
+*.zip
+*.xlsx
+*.bat
+.edge_temp_ss/
+test_*.html
+gam3eyaty_backup_*.json

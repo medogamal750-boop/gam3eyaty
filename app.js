@@ -25,6 +25,50 @@ const ALL_MONTHS_DEF = [
   { key: "dec", name: "ديسمبر" }
 ];
 
+// أيقونات ثلاثية الأبعاد لحالة تسجيل الدخول والحماية في الهيدر (Global Scope)
+function get3DLockIconSvg() {
+  return `<svg class="icon-3d icon-float-2" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+    <defs>
+      <filter id="lockShadowV2" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="1.8" stdDeviation="1.5" flood-color="#000" flood-opacity="0.5" />
+      </filter>
+      <linearGradient id="shackleChrome" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#ffffff" />
+        <stop offset="30%" stop-color="#e2e8f0" />
+        <stop offset="60%" stop-color="#94a3b8" />
+        <stop offset="100%" stop-color="#334155" />
+      </linearGradient>
+      <linearGradient id="lockGoldBody" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#fef08a" />
+        <stop offset="35%" stop-color="#fbbf24" />
+        <stop offset="75%" stop-color="#d97706" />
+        <stop offset="100%" stop-color="#78350f" />
+      </linearGradient>
+    </defs>
+    <path d="M6.5 10.5 V6 A5.5 5.5 0 0 1 17.5 6 V10.5" fill="none" stroke="url(#shackleChrome)" stroke-width="2.8" stroke-linecap="round" />
+    <rect x="4" y="9.5" width="16" height="12.5" rx="3.5" fill="url(#lockGoldBody)" filter="url(#lockShadowV2)" stroke="#fffbeb" stroke-width="0.6" />
+    <circle cx="12" cy="14.2" r="1.8" fill="#291404" />
+    <polygon points="10.8,14.5 13.2,14.5 12.8,18 11.2,18" fill="#291404" />
+    <circle cx="12" cy="13.7" r="0.7" fill="#fffbeb" opacity="0.9" />
+  </svg>`;
+}
+window.get3DLockIconSvg = get3DLockIconSvg;
+
+function get3DShieldIconSvg() {
+  return `<svg class="icon-3d" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+    <defs>
+      <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#34d399" />
+        <stop offset="60%" stop-color="#059669" />
+        <stop offset="100%" stop-color="#064e3b" />
+      </linearGradient>
+    </defs>
+    <path d="M12 2 L4 5.5 V11.5 C4 16.5 7.5 21 12 22 C16.5 21 20 16.5 20 11.5 V5.5 Z" fill="url(#shieldGrad)" stroke="#a7f3d0" stroke-width="0.8" />
+    <path d="M9 11.5 L11 13.5 L15 9.5" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  </svg>`;
+}
+window.get3DShieldIconSvg = get3DShieldIconSvg;
+
 /**
  * دالة ذكية لتحديد الشهر الفعلي الحالي تلقائياً بناءً على تاريخ اليوم الفعلي
  * تضمن فتح النظام دائماً على الشهر الجاري (أكتوبر 2026 حالياً، ثم نوفمبر، وهكذا)
@@ -437,6 +481,7 @@ async function checkMagicLink() {
 
   if (isPortalRequested) {
     appState.currentRole = "member";
+    appState.isAdminAuthenticated = false;
     if (!authPin) {
       appState.loggedMember = null;
     }
@@ -812,15 +857,8 @@ function toggleRole() {
     showToast("مرحباً بك في بوابة المشتركين 👤");
     updateView();
   } else { // "member"
-    if (appState.currentManager || appState.isAdminAuthenticated) {
-      appState.currentRole = "admin";
-      appState.isAdminAuthenticated = true;
-      showToast("مرحباً بك مجدداً في لوحة تحكم المدير 🛡️");
-      updateView();
-    } else {
-      appState.currentRole = "landing";
-      updateView();
-    }
+    // حماية الخصوصية: لا يمكن للمشترك التبديل للوحة تحكم المدير أبداً إلا بتسجيل دخول رسمي
+    openModal("modal-manager-auth");
   }
 }
 
@@ -833,26 +871,31 @@ function updateView() {
   const settingsBtn = document.getElementById("btn-admin-settings");
   const cloudSyncBtn = document.getElementById("btn-cloud-sync-manual");
   const gamTabsContainer = document.getElementById("gam3eya-tabs-container");
+  const cloudMgrBadge = document.getElementById("cloud-manager-badge");
+
+  const isMemberLink = window.location.search.includes('m=') || 
+                       window.location.search.includes('phone=') || 
+                       window.location.search.includes('portal=member');
 
   if (appState.currentRole === "admin") {
+    // 🛡️ جدار حماية أمني: منع فتح لوحة تحكم المدير إطلاقاً إلا بوجود مصادقة حقيقية وليس من رابط كشف حساب مشترك
+    if (isMemberLink || !appState.isAdminAuthenticated || !appState.currentManager) {
+      console.warn("🛡️ محاولة وصول غير مصرح بها للوحة تحكم المدير! تم عزل المسار وحماية البيانات.");
+      appState.currentRole = isMemberLink ? "member" : "landing";
+      updateView();
+      return;
+    }
+
     if (landingView) landingView.style.display = "none";
     if (adminView) adminView.style.display = "block";
     if (memberView) memberView.style.display = "none";
     if (gamTabsContainer) gamTabsContainer.style.display = "flex";
 
-    if (roleBadge) {
-      roleBadge.style.display = "none";
-    }
-    if (toggleBtn) {
-      toggleBtn.style.display = "none";
-    }
-    if (settingsBtn) {
-      settingsBtn.style.display = "inline-flex";
-      settingsBtn.innerHTML = "⚙️ لوحة التحكم";
-    }
-    if (cloudSyncBtn) {
-      cloudSyncBtn.style.display = "none";
-    }
+    if (roleBadge) roleBadge.style.display = "none";
+    if (toggleBtn) toggleBtn.style.display = "none";
+    if (settingsBtn) settingsBtn.style.display = "none";
+    if (cloudSyncBtn) cloudSyncBtn.style.display = "none";
+    if (cloudMgrBadge) cloudMgrBadge.style.display = "inline-flex";
 
     renderGamTabs();
     renderAdminDashboard();
@@ -866,16 +909,13 @@ function updateView() {
     if (roleBadge) {
       roleBadge.style.display = "inline-flex";
       roleBadge.className = "role-badge role-member";
-      roleBadge.innerHTML = "👤 بوابة المشتركين";
+      roleBadge.innerHTML = "👤 كشف حساب المشترك";
     }
-    if (toggleBtn) {
-      toggleBtn.style.display = "inline-flex";
-      toggleBtn.innerHTML = (appState.currentManager || appState.isAdminAuthenticated) 
-        ? "🛡️ العودة للوحة تحكم المدير" 
-        : "🏠 الصفحة الرئيسية";
-    }
+    // 🛡️ حماية صارمة لخصوصية وسرية الجمعيات: إخفاء أزرار الإدارة تماماً عن المشترك
+    if (toggleBtn) toggleBtn.style.display = "none";
     if (settingsBtn) settingsBtn.style.display = "none";
     if (cloudSyncBtn) cloudSyncBtn.style.display = "none";
+    if (cloudMgrBadge) cloudMgrBadge.style.display = "none";
 
     renderMemberSection();
   } else { // "landing"
@@ -887,10 +927,8 @@ function updateView() {
     if (roleBadge) roleBadge.style.display = "none";
     if (settingsBtn) settingsBtn.style.display = "none";
     if (cloudSyncBtn) cloudSyncBtn.style.display = "none";
-    if (toggleBtn) {
-      toggleBtn.style.display = "inline-flex";
-      toggleBtn.innerHTML = "👤 استعلام المشتركين";
-    }
+    if (toggleBtn) toggleBtn.style.display = "none";
+    if (cloudMgrBadge) cloudMgrBadge.style.display = "inline-flex";
   }
 }
 
@@ -994,12 +1032,20 @@ function renderMatrixTable() {
   thead.innerHTML = headHtml;
 
   tbody.innerHTML = "";
-  const filter = appState.statusFilter;
+  const filter = appState.statusFilter || "all";
+  const curMonthIdx = gam.months.findIndex(m => m.key === appState.currentMonthKey);
+  let renderedCount = 0;
 
   gam.members.forEach((member, index) => {
     const currentMonthStatuses = member.payments[appState.currentMonthKey] || [];
-    if (filter === "unpaid" && !currentMonthStatuses.includes("unpaid")) return;
-    if (filter === "paid" && !currentMonthStatuses.includes("paid")) return;
+    
+    if (filter === "unpaid") {
+      if (member.isVacant || !currentMonthStatuses.includes("unpaid")) return;
+    } else if (filter === "paid") {
+      if (member.isVacant || !currentMonthStatuses.includes("paid")) return;
+    }
+
+    renderedCount++;
 
     const tr = document.createElement("tr");
 
@@ -1067,6 +1113,25 @@ function renderMatrixTable() {
     tr.innerHTML = rowHtml;
     tbody.appendChild(tr);
   });
+
+  if (renderedCount === 0) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td colspan="${4 + gam.months.length}" style="text-align: center; padding: 2.75rem 1rem; color: #94a3b8; font-weight: 700; background: rgba(11, 23, 42, 0.4);">
+        <div style="font-size: 1.6rem; margin-bottom: 0.4rem;">🔍</div>
+        <div style="font-size: 1rem; color: #f8fafc; margin-bottom: 0.25rem;">لا يوجد مشتركون مطابقون لهذا الفلتر</div>
+        <div style="font-size: 0.82rem; color: #64748b; margin-bottom: 0.95rem;">جرّب اختيار تصنيف آخر أو إلغاء التصفية لعرض جميع المشتركين</div>
+        <button type="button" class="btn btn-sm btn-outline" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); font-size: 0.84rem; font-weight: 700; padding: 0.45rem 1.1rem; border-radius: 8px;" onclick="setFilterStatus('all')">
+          عرض جميع المشتركين
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  if (typeof updateFilterDropdownUI === "function") {
+    updateFilterDropdownUI();
+  }
 
   // تذييل إجمالي كل شهر متوافق مع الأعمدة المثبتة
   let footHtml = `
@@ -1521,15 +1586,9 @@ function renderMemberPortfolio() {
 
   const logoutBtn = document.getElementById("btn-member-logout");
   if (logoutBtn) {
-    if (appState.currentManager || appState.isAdminAuthenticated) {
-      logoutBtn.innerHTML = "🔙 العودة لإدارة الجمعيات";
-      logoutBtn.className = "btn btn-primary btn-sm no-print";
-      logoutBtn.title = "العودة إلى لوحة تحكم إدارة الجمعيات";
-    } else {
-      logoutBtn.innerHTML = "🚪 خروج";
-      logoutBtn.className = "btn btn-light btn-sm no-print";
-      logoutBtn.title = "تسجيل الخروج";
-    }
+    logoutBtn.innerHTML = "🚪 تسجيل الخروج";
+    logoutBtn.className = "btn btn-light btn-sm no-print";
+    logoutBtn.title = "تسجيل الخروج من كشف الحساب";
   }
 
   // 2. تجميع وحساب بيانات الجمعيات والاشتراكات (مع مزامنة الشهور تلقائياً)
@@ -1546,11 +1605,12 @@ function renderMemberPortfolio() {
       const matchIndex = m.names.findIndex(n => n.trim() === member.name.trim());
       if (matchIndex !== -1) {
         const isShared = m.isShared;
-        const myShare = m.shares[matchIndex] || (gam.shareAmount / (isShared ? 2 : 1));
+        const myShare = (m.shares && m.shares[matchIndex]) || (gam.shareAmount / (isShared ? 2 : 1)) || 0;
         const partnerName = isShared ? m.names[matchIndex === 0 ? 1 : 0] : null;
-        const totalMonths = gam.months.length;
+        const totalMonths = (gam.months && gam.months.length) || gam.totalMonths || 1;
         const totalObligation = myShare * totalMonths;
-        const payoutAmount = isShared ? (gam.totalPayout / 2) : gam.totalPayout;
+        const totalPayoutVal = gam.totalPayout || (gam.shareAmount * ((gam.members && gam.members.length) || totalMonths || 1)) || 0;
+        const payoutAmount = isShared ? (totalPayoutVal / 2) : totalPayoutVal;
 
         let gamPaid = 0;
         let paidMonthsCount = 0;
@@ -1713,18 +1773,18 @@ function renderMemberPortfolio() {
             ${entry.partnerName ? `<span class="tag-partner">🤝 نصف سهم (مع ${entry.partnerName})</span>` : `<span class="tag-full">🌟 سهم كامل</span>`}
           </div>
         </td>
-        <td class="col-num"><strong>${entry.myShare.toLocaleString()} ${curCurrency}</strong></td>
+        <td class="col-num"><strong>${(entry.myShare || 0).toLocaleString()} ${curCurrency}</strong></td>
         <td>
-          <div class="turn-meta-val">الدور: <strong>(${m.turn})</strong> • ${payoutName}</div>
-          <div class="payout-sub-meta">مبلغ القبض: <strong>${entry.payoutAmount.toLocaleString()} ${curCurrency}</strong> ${payoutStatusBadge}</div>
+          <div class="turn-meta-val">الدور: <strong>(${m.turn || '-'})</strong> • ${payoutName || '-'}</div>
+          <div class="payout-sub-meta">مبلغ القبض: <strong>${(entry.payoutAmount || 0).toLocaleString()} ${curCurrency}</strong> ${payoutStatusBadge}</div>
         </td>
         <td class="col-num col-success">
-          <strong>${entry.gamPaid.toLocaleString()} ${curCurrency}</strong>
-          <div class="col-subtext">(${entry.paidMonthsCount} من ${entry.totalMonthsCount} شهر)</div>
+          <strong>${(entry.gamPaid || 0).toLocaleString()} ${curCurrency}</strong>
+          <div class="col-subtext">(${entry.paidMonthsCount || 0} من ${entry.totalMonthsCount || 0} شهر)</div>
         </td>
         <td class="col-num col-danger">
-          <strong>${entry.gamRemaining.toLocaleString()} ${curCurrency}</strong>
-          <div class="col-subtext">(${entry.remainingMonthsCount} شهر متبقي)</div>
+          <strong>${(entry.gamRemaining || 0).toLocaleString()} ${curCurrency}</strong>
+          <div class="col-subtext">(${entry.remainingMonthsCount || 0} شهر متبقي)</div>
         </td>
         <td class="col-center">${curStBadge}</td>
         <td class="col-center">
@@ -2938,11 +2998,152 @@ function openWhatsAppModal() {
 }
 
 // ==========================================
-// 12. ربط مستمعي الأحداث (Event Listeners)
+// 12. ربط مستمعي الأحداث ومكون الفلاتر المتقدم
 // ==========================================
+
+const filterLabels = {
+  all: "عرض جميع المشتركين",
+  unpaid: "المتأخرين عن السداد",
+  paid: "المسددين لهذا الشهر"
+};
+
+function updateFilterDropdownCounts() {
+  const gam = getCurrentGam();
+  if (!gam) return;
+  const monthKey = appState.currentMonthKey;
+
+  let counts = {
+    all: gam.members.length,
+    unpaid: 0,
+    paid: 0
+  };
+
+  gam.members.forEach((member) => {
+    const currentStatuses = member.payments[monthKey] || [];
+    if (!member.isVacant) {
+      if (currentStatuses.includes("unpaid")) counts.unpaid++;
+      if (currentStatuses.includes("paid")) counts.paid++;
+    }
+  });
+
+  const setEl = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  };
+
+  setEl("count-filter-all", counts.all);
+  setEl("count-filter-unpaid", counts.unpaid);
+  setEl("count-filter-paid", counts.paid);
+
+  const curFilter = appState.statusFilter || "all";
+  const activeCountEl = document.getElementById("filter-active-count");
+  if (activeCountEl) {
+    activeCountEl.textContent = counts[curFilter] !== undefined ? counts[curFilter] : counts.all;
+  }
+}
+
+function updateFilterDropdownUI() {
+  const curFilter = appState.statusFilter || "all";
+  const labelEl = document.getElementById("filter-current-label");
+  if (labelEl) {
+    labelEl.textContent = filterLabels[curFilter] || "تصفية";
+  }
+
+  const triggerBtn = document.getElementById("btn-toggle-filter-dropdown");
+  const clearBtn = document.getElementById("btn-clear-filter");
+
+  if (triggerBtn) {
+    if (curFilter !== "all") {
+      triggerBtn.classList.add("filter-active-highlight");
+    } else {
+      triggerBtn.classList.remove("filter-active-highlight");
+    }
+  }
+
+  if (clearBtn) {
+    clearBtn.style.display = (curFilter !== "all") ? "flex" : "none";
+  }
+
+  document.querySelectorAll(".filter-dropdown-menu .dropdown-item").forEach(item => {
+    const fVal = item.getAttribute("data-filter");
+    if (fVal === curFilter) {
+      item.classList.add("active");
+    } else {
+      item.classList.remove("active");
+    }
+  });
+
+  updateFilterDropdownCounts();
+}
+
+function setFilterStatus(val) {
+  appState.statusFilter = val;
+  const selEl = document.getElementById("filter-status");
+  if (selEl) selEl.value = val;
+  updateFilterDropdownUI();
+  renderMatrixTable();
+  const menu = document.getElementById("filter-dropdown-menu");
+  const trigger = document.getElementById("btn-toggle-filter-dropdown");
+  if (menu) menu.classList.remove("show");
+  if (trigger) trigger.classList.remove("active");
+}
+window.setFilterStatus = setFilterStatus;
+
+function setupFilterDropdown() {
+  const triggerBtn = document.getElementById("btn-toggle-filter-dropdown");
+  const menu = document.getElementById("filter-dropdown-menu");
+  const clearBtn = document.getElementById("btn-clear-filter");
+
+  if (triggerBtn && menu) {
+    triggerBtn.onclick = (e) => {
+      e.stopPropagation();
+      const isOpen = menu.classList.contains("show");
+      if (isOpen) {
+        menu.classList.remove("show");
+        triggerBtn.classList.remove("active");
+      } else {
+        menu.classList.add("show");
+        triggerBtn.classList.add("active");
+        updateFilterDropdownCounts();
+      }
+    };
+
+    document.querySelectorAll(".filter-dropdown-menu .dropdown-item").forEach(item => {
+      item.onclick = (e) => {
+        e.stopPropagation();
+        const fVal = item.getAttribute("data-filter");
+        setFilterStatus(fVal);
+      };
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!menu.contains(e.target) && !triggerBtn.contains(e.target)) {
+        menu.classList.remove("show");
+        triggerBtn.classList.remove("active");
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && menu.classList.contains("show")) {
+        menu.classList.remove("show");
+        triggerBtn.classList.remove("active");
+      }
+    });
+  }
+
+  if (clearBtn) {
+    clearBtn.onclick = (e) => {
+      e.stopPropagation();
+      setFilterStatus("all");
+    };
+  }
+
+  updateFilterDropdownUI();
+}
 
 function attachEventListeners() {
   setupModalCloseButtons();
+  setupFilterDropdown();
 
   const btnToggleRole = document.getElementById("btn-toggle-role");
   if (btnToggleRole) btnToggleRole.onclick = toggleRole;
@@ -2956,12 +3157,15 @@ function attachEventListeners() {
     }
     renderAdminDashboard();
     renderMatrixTable();
+    updateFilterDropdownUI();
   };
 
-  document.getElementById("filter-status").onchange = (e) => {
-    appState.statusFilter = e.target.value;
-    renderMatrixTable();
-  };
+  const nativeFilterSelect = document.getElementById("filter-status");
+  if (nativeFilterSelect) {
+    nativeFilterSelect.onchange = (e) => {
+      setFilterStatus(e.target.value);
+    };
+  }
 
   document.getElementById("btn-edit-current-gam").onclick = openManageGamModal;
 
@@ -3071,20 +3275,14 @@ function attachEventListeners() {
     };
   }
 
-  // تسجيل خروج المشترك أو العودة للوحة الإدارة إذا كان المدير هو الذي يعاين الكشف
+  // تسجيل خروج المشترك من كشف الحساب
   document.getElementById("btn-member-logout").onclick = () => {
     appState.loggedMember = null;
     try {
       sessionStorage.removeItem("gam_active_member_session");
     } catch(e) {}
-    if (appState.currentManager || appState.isAdminAuthenticated) {
-      appState.currentRole = "admin";
-      updateView();
-      showToast("تمت العودة للوحة تحكم إدارة الجمعيات 🛡️");
-    } else {
-      showToast("تم تسجيل الخروج من بوابة المشترك 🚪");
-      renderMemberSection();
-    }
+    showToast("تم تسجيل الخروج من كشف الحساب بنجاح 🚪");
+    renderMemberSection();
   };
 
   // طباعة كشف الحساب المعتمد
@@ -3612,7 +3810,9 @@ function attachEventListeners() {
         const cloudNameEl = document.getElementById("cloud-manager-name");
         const cloudIconEl = document.getElementById("cloud-status-icon");
         if (cloudNameEl) cloudNameEl.textContent = `🟢 ${res.user.displayName || 'المدير'}`;
-        if (cloudIconEl) cloudIconEl.textContent = "🛡️";
+        if (cloudIconEl) cloudIconEl.innerHTML = get3DShieldIconSvg();
+        const chevron = document.getElementById("cloud-dropdown-chevron");
+        if (chevron) chevron.style.display = "inline-block";
 
         closeModal("modal-settings");
         updateView();
@@ -3734,17 +3934,53 @@ function attachEventListeners() {
     };
   }
 
-  // أزرار وإجراءات حساب المدير (Multi-Tenant Auth - 2 Options Only)
+  // أزرار وإجراءات حساب المدير والقائمة المنسدلة الشاملة (Manager Profile & Dropdown)
   const btnOpenMgrAuth = document.getElementById("btn-open-manager-auth");
+  const mgrDropdown = document.getElementById("mgr-profile-dropdown");
+
+  function closeMgrDropdown() {
+    if (mgrDropdown) {
+      mgrDropdown.style.display = "none";
+      const chevron = document.getElementById("cloud-dropdown-chevron");
+      if (chevron) chevron.style.transform = "rotate(0deg)";
+    }
+  }
+
+  function toggleMgrDropdown() {
+    if (!mgrDropdown) return;
+    const isClosed = mgrDropdown.style.display === "none" || !mgrDropdown.style.display;
+    if (isClosed) {
+      // تحديث بيانات الترويسة والأرشيف داخل القائمة المنسدلة
+      const nameEl = document.getElementById("dropdown-user-name");
+      if (nameEl) {
+        nameEl.textContent = (appState.currentManager && (appState.currentManager.displayName || appState.currentManager.email)) 
+          ? (appState.currentManager.displayName || appState.currentManager.email) 
+          : "المدير العام";
+      }
+      const archBadge = document.getElementById("dropdown-archive-badge");
+      if (archBadge) {
+        const count = (appData && Array.isArray(appData.gam3eyat)) ? appData.gam3eyat.filter(g => g.isArchived).length : 0;
+        archBadge.textContent = count;
+      }
+      mgrDropdown.style.display = "block";
+      const chevron = document.getElementById("cloud-dropdown-chevron");
+      if (chevron) chevron.style.transform = "rotate(180deg)";
+    } else {
+      closeMgrDropdown();
+    }
+  }
+
   if (btnOpenMgrAuth) {
-    btnOpenMgrAuth.onclick = () => {
-      // إذا كان المدير مسجل دخوله بالفعل، نفتح له لوحة التحكم والإعدادات مباشرة!
+    btnOpenMgrAuth.onclick = (e) => {
+      e.stopPropagation();
+      // إذا كان المدير مسجل دخوله، نفتح القائمة المنسدلة الشاملة دائماً
       if (appState.currentManager) {
-        openSettingsModal();
+        toggleMgrDropdown();
         return;
       }
 
       // إذا لم يكن مسجلاً، نفتح نافذة تسجيل الدخول العادية
+      closeMgrDropdown();
       const statusBar = document.getElementById("mgr-active-status-bar");
       if (statusBar) statusBar.style.display = "none";
       const tabsRow = document.querySelector(".auth-tabs-row");
@@ -3755,6 +3991,79 @@ function attachEventListeners() {
       if (formReg) formReg.style.display = "none";
 
       openModal("modal-manager-auth");
+    };
+  }
+
+  // إغلاق القائمة المنسدلة عند النقر في أي مكان خارجها أو زر Escape
+  document.addEventListener("click", (e) => {
+    const wrapper = document.getElementById("cloud-manager-badge");
+    if (wrapper && !wrapper.contains(e.target)) {
+      closeMgrDropdown();
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      closeMgrDropdown();
+    }
+  });
+
+  // أحداث عناصر القائمة المنسدلة
+  const itemDashboard = document.getElementById("menu-item-dashboard");
+  if (itemDashboard) {
+    itemDashboard.onclick = (e) => {
+      e.stopPropagation();
+      closeMgrDropdown();
+      if (appState.currentRole !== "admin") {
+        appState.currentRole = "admin";
+        updateView();
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+  }
+
+  const itemProfile = document.getElementById("menu-item-profile");
+  if (itemProfile) {
+    itemProfile.onclick = (e) => {
+      e.stopPropagation();
+      closeMgrDropdown();
+      openSettingsModal();
+    };
+  }
+
+  const itemDir = document.getElementById("menu-item-directory");
+  if (itemDir) {
+    itemDir.onclick = (e) => {
+      e.stopPropagation();
+      closeMgrDropdown();
+      openMembersDirectoryModal();
+    };
+  }
+
+  const itemArch = document.getElementById("menu-item-archives");
+  if (itemArch) {
+    itemArch.onclick = (e) => {
+      e.stopPropagation();
+      closeMgrDropdown();
+      openArchivesModal();
+    };
+  }
+
+  const itemLogout = document.getElementById("menu-item-logout");
+  if (itemLogout) {
+    itemLogout.onclick = async (e) => {
+      e.stopPropagation();
+      closeMgrDropdown();
+      if (confirm("هل أنت متأكد من تسجيل الخروج من حساب المدير؟")) {
+        try {
+          if (typeof FirebaseService !== "undefined") {
+            await FirebaseService.logoutManager();
+          }
+          showToast("تم تسجيل الخروج بنجاح 👋");
+        } catch(err) {
+          console.warn("خطأ أثناء تسجيل الخروج:", err);
+        }
+      }
     };
   }
 
@@ -3781,7 +4090,7 @@ function attachEventListeners() {
       const cloudNameEl = document.getElementById("cloud-manager-name");
       const cloudIconEl = document.getElementById("cloud-status-icon");
       if (cloudNameEl) cloudNameEl.textContent = "تسجيل دخول المدير";
-      if (cloudIconEl) cloudIconEl.textContent = "🔐";
+      if (cloudIconEl) cloudIconEl.innerHTML = get3DLockIconSvg();
 
       closeModal("modal-manager-auth");
       renderGamTabs();
@@ -3869,7 +4178,9 @@ function attachEventListeners() {
         const cloudNameEl = document.getElementById("cloud-manager-name");
         const cloudIconEl = document.getElementById("cloud-status-icon");
         if (cloudNameEl) cloudNameEl.textContent = `🟢 ${res.user.displayName || 'المدير'}`;
-        if (cloudIconEl) cloudIconEl.textContent = "🛡️";
+        if (cloudIconEl) cloudIconEl.innerHTML = get3DShieldIconSvg();
+        const chevron = document.getElementById("cloud-dropdown-chevron");
+        if (chevron) chevron.style.display = "inline-block";
 
         closeModal("modal-manager-auth");
         formLogin.reset();
@@ -3978,7 +4289,7 @@ function attachEventListeners() {
         const cloudNameEl = document.getElementById("cloud-manager-name");
         const cloudIconEl = document.getElementById("cloud-status-icon");
         if (cloudNameEl) cloudNameEl.textContent = `🟢 ${name}`;
-        if (cloudIconEl) cloudIconEl.textContent = "🛡️";
+        if (cloudIconEl) cloudIconEl.innerHTML = get3DShieldIconSvg();
 
         closeModal("modal-manager-auth");
         formReg.reset();
@@ -4004,14 +4315,16 @@ function attachEventListeners() {
   function setupPassEyeToggle(btnId, inputId) {
     const btn = document.getElementById(btnId);
     const input = document.getElementById(inputId);
+    const eyeOpenSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+    const eyeCloseSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
     if (btn && input) {
       btn.onclick = () => {
         if (input.type === "password") {
           input.type = "text";
-          btn.textContent = "🙈";
+          btn.innerHTML = eyeCloseSvg;
         } else {
           input.type = "password";
-          btn.textContent = "👁️";
+          btn.innerHTML = eyeOpenSvg;
         }
       };
     }
@@ -4156,36 +4469,6 @@ function attachEventListeners() {
     };
   }
 
-  const btnHeroDemo = document.getElementById("btn-hero-demo");
-  if (btnHeroDemo) {
-    btnHeroDemo.onclick = () => {
-      setAppData(JSON.parse(JSON.stringify(INITIAL_DATA)));
-      appState.isAdminAuthenticated = true;
-      appState.currentRole = "admin";
-      if (appData.gam3eyat && appData.gam3eyat[0]) {
-        appState.currentGamId = appData.gam3eyat[0].id;
-        appState.currentMonthKey = getSmartCurrentMonthKey(appData.gam3eyat[0]);
-        syncMonthPaymentStatuses(appData.gam3eyat[0], appState.currentMonthKey);
-      }
-      renderGamTabs();
-      setupMonthSelector();
-      updateView();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      showToast("مرحباً بك في النسخة التجريبية المكتملة! يمكنك فحص واستعراض كافة المزايا الآن 🌟");
-    };
-  }
-
-  const formLandingMember = document.getElementById("form-landing-member-login");
-  if (formLandingMember) {
-    formLandingMember.onsubmit = async (e) => {
-      e.preventDefault();
-      const phone = document.getElementById("landing-member-phone").value.trim();
-      const pin = document.getElementById("landing-member-pin").value.trim();
-      await handleMemberLogin(phone, pin);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-  }
-
   const btnMemberBackHome = document.getElementById("btn-member-back-home");
   if (btnMemberBackHome) {
     btnMemberBackHome.onclick = () => {
@@ -4195,62 +4478,7 @@ function attachEventListeners() {
     };
   }
 
-  setupLandingShowcase();
   setupModalCloseButtons();
-}
-
-function setupLandingShowcase() {
-  const tabs = document.querySelectorAll(".showcase-tab-item");
-  const slides = document.querySelectorAll(".showcase-slide-body");
-  const showcaseCard = document.querySelector(".landing-showcase-card");
-
-  if (!tabs.length || !slides.length) return;
-
-  let currentSlide = 0;
-  let autoSlideTimer = null;
-
-  function goToSlide(index) {
-    currentSlide = index;
-    tabs.forEach((tab, i) => {
-      tab.classList.toggle("active", i === index);
-    });
-    slides.forEach((slide, i) => {
-      slide.classList.toggle("active", i === index);
-    });
-  }
-  window.goToShowcaseSlide = goToSlide;
-
-  tabs.forEach((tab) => {
-    tab.addEventListener("click", () => {
-      const target = parseInt(tab.getAttribute("data-slide"), 10);
-      if (!isNaN(target)) {
-        goToSlide(target);
-      }
-    });
-  });
-
-  function startAutoCycle() {
-    stopAutoCycle();
-    autoSlideTimer = setInterval(() => {
-      const next = (currentSlide + 1) % slides.length;
-      goToSlide(next);
-    }, 4500);
-  }
-
-  function stopAutoCycle() {
-    if (autoSlideTimer) {
-      clearInterval(autoSlideTimer);
-      autoSlideTimer = null;
-    }
-  }
-
-  if (showcaseCard) {
-    showcaseCard.addEventListener("mouseenter", stopAutoCycle);
-    showcaseCard.addEventListener("mouseleave", startAutoCycle);
-    showcaseCard.addEventListener("touchstart", stopAutoCycle, { passive: true });
-  }
-
-  startAutoCycle();
 }
 
 // دالات الانتقال الفعلي من شاشات المعاينة إلى الشاشات الحقيقية
@@ -4413,17 +4641,28 @@ function setupManagerCloudLifecycle() {
     const cloudIconEl = document.getElementById("cloud-status-icon");
     const migrationBanner = document.getElementById("migration-banner");
 
+    const isMemberLink = window.location.search.includes('m=') || window.location.search.includes('phone=') || window.location.search.includes('portal=member');
+
+    if (isMemberLink) {
+      // 🛡️ عزل صارم: روابط كشوفات المشتركين معزولة تماماً ولا تمنح أي وصول للوحة المدير
+      appState.currentRole = "member";
+      appState.isAdminAuthenticated = false;
+      const cloudMgrBadge = document.getElementById("cloud-manager-badge");
+      if (cloudMgrBadge) cloudMgrBadge.style.display = "none";
+      const toggleBtn = document.getElementById("btn-toggle-role");
+      if (toggleBtn) toggleBtn.style.display = "none";
+      updateView();
+      return;
+    }
+
     if (managerUser) {
       appState.currentManager = managerUser;
       appState.isAdminAuthenticated = true;
-      const isMemberLink = window.location.search.includes('m=') || window.location.search.includes('phone=') || window.location.search.includes('portal=member');
-      if (!isMemberLink) {
-        appState.currentRole = "admin";
-      } else {
-        appState.currentRole = "member";
-      }
+      appState.currentRole = "admin";
       if (cloudNameEl) cloudNameEl.textContent = `🟢 ${managerUser.displayName || managerUser.email || "المدير"}`;
-      if (cloudIconEl) cloudIconEl.textContent = "🛡️";
+      if (cloudIconEl) cloudIconEl.innerHTML = get3DShieldIconSvg();
+      const chevron = document.getElementById("cloud-dropdown-chevron");
+      if (chevron) chevron.style.display = "inline-block";
 
       // جلب بيانات المدير من السحابة أو التخزين المحلي
       try {
@@ -4474,7 +4713,9 @@ function setupManagerCloudLifecycle() {
       appState.currentManager = null;
       appState.isAdminAuthenticated = false;
       if (cloudNameEl) cloudNameEl.textContent = "تسجيل دخول المدير";
-      if (cloudIconEl) cloudIconEl.textContent = "🔐";
+      if (cloudIconEl) cloudIconEl.innerHTML = get3DLockIconSvg();
+      const chevron = document.getElementById("cloud-dropdown-chevron");
+      if (chevron) chevron.style.display = "none";
       if (migrationBanner) migrationBanner.style.display = "none";
       setAppData(loadData());
       if (appData.gam3eyat && appData.gam3eyat.length > 0) {

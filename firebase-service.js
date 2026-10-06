@@ -161,9 +161,11 @@ const FirebaseService = {
     // 1. الدخول برمز المدير الافتراضي أو PIN
     const adminPin = (typeof appData !== "undefined" && appData && appData.adminPin) ? String(appData.adminPin) : "1234";
     if (cleanPass === adminPin || cleanPass === "1234" || cleanPass === "admin" || cleanEmail === "1234" || cleanEmail === "admin") {
+      const managersList = JSON.parse(localStorage.getItem("gam_local_managers_list") || "[]");
+      const matched = managersList.find(m => m.uid === "admin_default" || (m.email && m.email === (loginEmail.includes("@") ? loginEmail : "admin@gam.com")));
       const localUser = {
         uid: "admin_default",
-        displayName: "المدير العام",
+        displayName: (matched && matched.displayName) ? matched.displayName : "محمد العزب",
         email: loginEmail.includes("@") ? loginEmail : "admin@gam.com",
         isLocalOnly: true
       };
@@ -180,27 +182,20 @@ const FirebaseService = {
       } catch (err) {
         console.warn("تنبيه تسجيل الدخول السحابي:", err.code, err.message);
 
-        // إنشاء الحساب تلقائياً إذا كان أول دخول للمدير
-        if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-          try {
-            const newCred = await firebaseAuth.createUserWithEmailAndPassword(cleanEmail, cleanPass);
-            this._notifyStateChanged(newCred.user);
-            return { user: newCred.user, isCloud: true, isNew: true };
-          } catch (createErr) {
-            console.warn("تعذر الإنشاء التلقائي في Firebase:", createErr.message);
-          }
+        if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+          throw new Error("كلمة المرور أو البريد الإلكتروني غير صحيح! يُرجى التحقق وإعادة المحاولة.");
+        }
+        if (err.code === 'auth/user-not-found') {
+          throw new Error("هذا الحساب غير مسجل في النظام! يمكنك تسجيل حساب جديد من تبويب 'تسجيل مدير جديد'.");
+        }
+        if (err.code === 'auth/too-many-requests') {
+          throw new Error("تم حظر محاولات الدخول مؤقتاً بسبب تكرار كلمة المرور الخاطئة. يُرجى الانتظار أو استعادة كلمة المرور.");
+        }
+        if (err.code === 'auth/invalid-email') {
+          throw new Error("صيغة البريد الإلكتروني المدخل غير صالحة!");
         }
 
-        // في حال تعذر المصادقة السحابية (مثلاً لم يتم تفعيل Email/Password في الكونسول)، نسجل الدخول محلياً لحماية المدير
-        const localUser = {
-          uid: "admin_default",
-          displayName: "المدير العام",
-          email: cleanEmail,
-          isLocalOnly: true
-        };
-        localStorage.setItem("gam_current_active_manager", JSON.stringify(localUser));
-        this._notifyStateChanged(localUser);
-        return { user: localUser, isCloud: false, fallbackNotice: err.message };
+        throw err;
       }
     } else {
       let managersList = JSON.parse(localStorage.getItem("gam_local_managers_list") || "[]");
@@ -320,21 +315,22 @@ const FirebaseService = {
   async getManagerData(uid) {
     if (!uid) return null;
 
-    if (window.isFirebaseConfigured()) {
+    if (window.isFirebaseConfigured && window.isFirebaseConfigured()) {
       try {
-        const docSnap = await firebaseDb.collection("managers").doc(uid).collection("data").doc("current").get();
-        if (docSnap.exists) {
+        const fetchPromise = firebaseDb.collection("managers").doc(uid).collection("data").doc("current").get();
+        const docSnap = await Promise.race([
+          fetchPromise,
+          new Promise(r => setTimeout(() => r(null), 2000))
+        ]);
+        if (docSnap && docSnap.exists) {
           return docSnap.data();
         }
-        return null;
       } catch (err) {
-        console.error("خطأ في جلب بيانات المدير من Firestore:", err);
-        return null;
+        console.warn("تنبيه في جلب بيانات المدير من Firestore:", err);
       }
-    } else {
-      const saved = localStorage.getItem(`gam_data_mgr_${uid}`);
-      return saved ? JSON.parse(saved) : null;
     }
+    const saved = localStorage.getItem(`gam_data_mgr_${uid}`);
+    return saved ? JSON.parse(saved) : null;
   },
 
   // حفظ بيانات المدير في السحابة
@@ -344,19 +340,30 @@ const FirebaseService = {
     // تنظيف البيانات والتأكد من عدم وجود دوال أو عناصر غير صالحة للتخزين
     const cleanData = JSON.parse(JSON.stringify(appDataToSave));
 
+    // الحفظ المحلي الفوري دائماً لضمان عدم فقدان أي تعديل حتى لو انقطع الاتصال
+    try {
+      localStorage.setItem(`gam_data_mgr_${uid}`, JSON.stringify(cleanData));
+    } catch (e) {
+      console.warn("تعذر الحفظ المحلي لبيانات المدير:", e);
+    }
+
     if (window.isFirebaseConfigured && window.isFirebaseConfigured()) {
       try {
         cleanData.lastUpdated = firebase.firestore.FieldValue.serverTimestamp();
-        await firebaseDb.collection("managers").doc(uid).collection("data").doc("current").set(cleanData, { merge: true });
-        // نسخة عامة موحدة للاستعلام المباشر عبر روابط الواتساب من الهواتف
-        await firebaseDb.collection("public_data").doc("active_statement").set(cleanData, { merge: true });
+        const writePromise = Promise.all([
+          firebaseDb.collection("managers").doc(uid).collection("data").doc("current").set(cleanData, { merge: true }),
+          firebaseDb.collection("public_data").doc("active_statement").set(cleanData, { merge: true })
+        ]);
+        await Promise.race([
+          writePromise,
+          new Promise(r => setTimeout(r, 2000))
+        ]);
         return true;
       } catch (err) {
-        console.error("خطأ في حفظ البيانات في Firestore:", err);
+        console.warn("خطأ في حفظ البيانات في Firestore:", err);
         return false;
       }
     } else {
-      localStorage.setItem(`gam_data_mgr_${uid}`, JSON.stringify(cleanData));
       return true;
     }
   },
@@ -387,8 +394,11 @@ const FirebaseService = {
 
     if (!managerData && window.isFirebaseConfigured && window.isFirebaseConfigured()) {
       try {
-        const publicSnap = await firebaseDb.collection("public_data").doc("active_statement").get();
-        if (publicSnap.exists) {
+        const publicSnap = await Promise.race([
+          firebaseDb.collection("public_data").doc("active_statement").get(),
+          new Promise(r => setTimeout(() => r(null), 2000))
+        ]);
+        if (publicSnap && publicSnap.exists) {
           managerData = publicSnap.data();
         }
       } catch (err) {
@@ -426,6 +436,10 @@ const FirebaseService = {
       });
     });
 
+    return {
+      managerData: managerData,
+      matchingGams: matchingGams
+    };
   },
 
   // إرسال رابط استرجاع كلمة المرور للبريد الإلكتروني

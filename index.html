@@ -15,7 +15,46 @@
   <header class="app-header">
     <div class="header-container">
       <div class="logo-section">
-        <div class="logo-icon">💰</div>
+        <div class="logo-icon" title="نظام إدارة الجمعيات المالية">
+          <svg class="icon-3d icon-float-1" viewBox="0 0 48 48" width="38" height="38" aria-hidden="true">
+            <defs>
+              <filter id="logoShadowV2" x="-20%" y="-20%" width="150%" height="150%">
+                <feDropShadow dx="0" dy="2.5" stdDeviation="2.5" flood-color="#000" flood-opacity="0.5" />
+              </filter>
+              <linearGradient id="goldRimV2" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#fffbeb" />
+                <stop offset="20%" stop-color="#fde047" />
+                <stop offset="45%" stop-color="#eab308" />
+                <stop offset="80%" stop-color="#ca8a04" />
+                <stop offset="100%" stop-color="#713f12" />
+              </linearGradient>
+              <radialGradient id="goldPlateV2" cx="35%" cy="30%" r="65%">
+                <stop offset="0%" stop-color="#fef08a" />
+                <stop offset="40%" stop-color="#eab308" />
+                <stop offset="85%" stop-color="#b45309" />
+                <stop offset="100%" stop-color="#78350f" />
+              </radialGradient>
+              <linearGradient id="coinBevelHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9" />
+                <stop offset="100%" stop-color="#eab308" stop-opacity="0.1" />
+              </linearGradient>
+            </defs>
+            <ellipse cx="24" cy="26" rx="20" ry="19" fill="#713f12" opacity="0.9" />
+            <ellipse cx="24" cy="24" rx="20" ry="19" fill="url(#goldRimV2)" filter="url(#logoShadowV2)" />
+            <circle cx="24" cy="23.5" r="15" fill="url(#goldPlateV2)" stroke="#78350f" stroke-width="0.8" />
+            <circle cx="24" cy="23.5" r="14.2" fill="none" stroke="url(#coinBevelHighlight)" stroke-width="1.2" opacity="0.8" />
+            <circle cx="24" cy="23.5" r="9" fill="none" stroke="#fffbeb" stroke-width="2" opacity="0.95" />
+            <circle cx="24" cy="23.5" r="3.2" fill="#fffbeb" />
+            <line x1="24" y1="12.5" x2="24" y2="34.5" stroke="#fffbeb" stroke-width="2.2" stroke-linecap="round" />
+            <line x1="13" y1="23.5" x2="35" y2="23.5" stroke="#fffbeb" stroke-width="2.2" stroke-linecap="round" />
+            <line x1="16" y1="15.5" x2="32" y2="31.5" stroke="#fffbeb" stroke-width="1.6" stroke-linecap="round" opacity="0.8" />
+            <line x1="16" y1="31.5" x2="32" y2="15.5" stroke="#fffbeb" stroke-width="1.6" stroke-linecap="round" opacity="0.8" />
+            <circle cx="24" cy="6.5" r="1.3" fill="#ffffff" />
+            <circle cx="24" cy="40.5" r="1.3" fill="#ca8a04" />
+            <circle cx="7" cy="23.5" r="1.3" fill="#fef08a" />
+            <circle cx="41" cy="23.5" r="1.3" fill="#ca8a04" />
+          </svg>
+        </div>
         <div class="logo-text">
           <h1>نظام إدارة الجمعيات</h1>
           <p id="app-subtitle">متابعة الأقساط، مواعيد القبض، وكشوفات الحساب</p>
@@ -23,12 +62,83 @@
       </div>
 
       <div class="header-controls">
-        <!-- زر وحالة حساب المدير السحابي -->
+        <!-- زر حساب المدير والقائمة المنسدلة الشاملة (Manager Profile & Dropdown Menu) -->
         <div id="cloud-manager-badge" class="cloud-manager-wrapper">
-          <button type="button" id="btn-open-manager-auth" class="btn btn-light btn-cloud-auth" title="تسجيل الدخول كمدير أو إنشاء حساب جديد">
-            <span id="cloud-status-icon">🔐</span>
+          <button type="button" id="btn-open-manager-auth" class="btn btn-light btn-cloud-auth" title="حساب المدير وإعدادات النظام">
+            <span id="cloud-status-icon">
+              <svg class="icon-3d icon-float-2" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                <defs>
+                  <filter id="lockShadowV2" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="1.8" stdDeviation="1.5" flood-color="#000" flood-opacity="0.5" />
+                  </filter>
+                  <linearGradient id="shackleChrome" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#ffffff" />
+                    <stop offset="30%" stop-color="#e2e8f0" />
+                    <stop offset="60%" stop-color="#94a3b8" />
+                    <stop offset="100%" stop-color="#334155" />
+                  </linearGradient>
+                  <linearGradient id="lockGoldBody" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#fef08a" />
+                    <stop offset="35%" stop-color="#fbbf24" />
+                    <stop offset="75%" stop-color="#d97706" />
+                    <stop offset="100%" stop-color="#78350f" />
+                  </linearGradient>
+                </defs>
+                <path d="M6.5 10.5 V6 A5.5 5.5 0 0 1 17.5 6 V10.5" fill="none" stroke="url(#shackleChrome)" stroke-width="2.8" stroke-linecap="round" />
+                <rect x="4" y="9.5" width="16" height="12.5" rx="3.5" fill="url(#lockGoldBody)" filter="url(#lockShadowV2)" stroke="#fffbeb" stroke-width="0.6" />
+                <circle cx="12" cy="14.2" r="1.8" fill="#291404" />
+                <polygon points="10.8,14.5 13.2,14.5 12.8,18 11.2,18" fill="#291404" />
+                <circle cx="12" cy="13.7" r="0.7" fill="#fffbeb" opacity="0.9" />
+              </svg>
+            </span>
             <span id="cloud-manager-name">تسجيل دخول المدير</span>
+            <span id="cloud-dropdown-chevron" style="display: none; font-size: 0.72rem; margin-right: 2px;">▾</span>
           </button>
+
+          <!-- القائمة المنسدلة الاحترافية للمدير (Manager Dropdown Menu) -->
+          <div id="mgr-profile-dropdown" class="profile-dropdown-menu" style="display: none;">
+            <div class="dropdown-header">
+              <div class="dropdown-user-name" id="dropdown-user-name">المدير العام</div>
+              <div class="dropdown-user-role">لوحة إدارة الجمعيات</div>
+            </div>
+            <div class="dropdown-divider"></div>
+            <button type="button" class="dropdown-item" id="menu-item-dashboard">
+              <span class="dropdown-icon">📊</span>
+              <div class="dropdown-item-text">
+                <span class="dropdown-item-title">لوحة إدارة الجمعيات</span>
+                <span class="dropdown-item-desc">عرض ومتابعة الجمعيات النشطة</span>
+              </div>
+            </button>
+            <button type="button" class="dropdown-item" id="menu-item-profile">
+              <span class="dropdown-icon">👤</span>
+              <div class="dropdown-item-text">
+                <span class="dropdown-item-title">الملف الشخصي وكلمة المرور</span>
+                <span class="dropdown-item-desc">تعديل الاسم، البريد، وتغيير الرمز</span>
+              </div>
+            </button>
+            <button type="button" class="dropdown-item" id="menu-item-directory">
+              <span class="dropdown-icon">👥</span>
+              <div class="dropdown-item-text">
+                <span class="dropdown-item-title">دليل المشتركين المعتمد</span>
+                <span class="dropdown-item-desc">سجلات الهواتف والبحث والأكواد</span>
+              </div>
+            </button>
+            <button type="button" class="dropdown-item" id="menu-item-archives">
+              <span class="dropdown-icon">🗄️</span>
+              <div class="dropdown-item-text">
+                <span class="dropdown-item-title">أرشيف الجمعيات السابقة</span>
+                <span class="dropdown-item-desc">مراجعة الجمعيات المكتملة</span>
+              </div>
+              <span class="dropdown-badge" id="dropdown-archive-badge">0</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button type="button" class="dropdown-item dropdown-item-danger" id="menu-item-logout">
+              <span class="dropdown-icon">🚪</span>
+              <div class="dropdown-item-text">
+                <span class="dropdown-item-title">تسجيل الخروج</span>
+              </div>
+            </button>
+          </div>
         </div>
 
         <span id="current-role-badge" class="role-badge role-admin" style="display: none;">
@@ -42,10 +152,6 @@
 
         <button id="btn-cloud-sync-manual" class="btn btn-gold" title="مزامنة ونشر الجمعيات في السحابة فوراً" style="display: none; font-size: 0.8rem; font-weight: 700;">
           ☁️ مزامنة السحابة
-        </button>
-
-        <button id="btn-admin-settings" class="btn btn-light" title="لوحة التحكم والإعدادات" style="display: none;">
-          ⚙️ لوحة التحكم
         </button>
       </div>
     </div>
@@ -78,349 +184,237 @@
     <!-- ============================================== -->
     <section id="landing-page-view" class="landing-page-section">
       
-      <!-- 1. قسم البطل (Hero Section) -->
+      <!-- 1. قسم البطل (Hero Section) المباشر والواضح -->
       <div class="landing-hero">
-        <div class="hero-pill-badge">
-          <span>✨</span>
-          <span>المنصة السحابية المتكاملة لإدارة الجمعيات المالية</span>
-        </div>
-
         <h1 class="hero-main-title">
-          أدِر جمعياتك المالية باحترافية وسهولة..<br>
-          وشارك كشوفات الحساب <span class="highlight-gold">بضغطة زر</span>
+          أسهل طريقة لإدارة جمعياتك المالية<br>
+          وكشف حساب كل مشترك بضغطة زر
         </h1>
 
         <p class="hero-lead-text">
-          نظام مالي ذكي لمتابعة الأقساط الشهرية، مواعيد استلام الأدوار، إرسال تذكيرات الواتساب التلقائية، وتوليد كشوفات حساب تفاعلية ورسمية (PDF) لكل مشترك بكل أمان وشفافية.
+          تابع أقساطك الشهرية ومواعيد الاستلام بدقة،<br>
+          وأرسل تذكيرات الواتساب للمشتركين بكل سهولة.
         </p>
 
+        <!-- الزر المباشر والواضح في المنتصف لاستعلام المشتركين -->
         <div class="hero-cta-buttons">
-          <button type="button" class="btn-hero-primary" onclick="openModal('modal-manager-auth')">
-            <span>🚀</span>
-            <span>ابدأ الآن كمدير جمعية (مجاناً)</span>
-          </button>
-
-          <button type="button" class="btn-hero-secondary" id="btn-hero-member-portal">
-            <span>👤</span>
-            <span>دخول بوابة المشتركين</span>
-          </button>
-
-          <button type="button" class="btn-hero-demo" id="btn-hero-demo">
-            <span>👀</span>
-            <span>تجربة فورية بنظام جاهز (Demo)</span>
+          <button type="button" class="btn-hero-primary" id="btn-hero-member-portal">
+            <svg class="icon-3d icon-float-3" viewBox="0 0 28 28" width="24" height="24" aria-hidden="true">
+              <defs>
+                <filter id="cardShadowV2" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="2" stdDeviation="1.8" flood-color="#000" flood-opacity="0.45" />
+                </filter>
+                <linearGradient id="cardGradV2" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#34d399" />
+                  <stop offset="40%" stop-color="#059669" />
+                  <stop offset="100%" stop-color="#064e3b" />
+                </linearGradient>
+                <linearGradient id="goldChipV2" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#fffbeb" />
+                  <stop offset="50%" stop-color="#fbbf24" />
+                  <stop offset="100%" stop-color="#b45309" />
+                </linearGradient>
+              </defs>
+              <rect x="2" y="3.5" width="24" height="21" rx="4" fill="url(#cardGradV2)" filter="url(#cardShadowV2)" stroke="rgba(255,255,255,0.4)" stroke-width="0.8" />
+              <rect x="5.5" y="7" width="6" height="5" rx="1.2" fill="url(#goldChipV2)" stroke="#78350f" stroke-width="0.4" />
+              <line x1="8.5" y1="7" x2="8.5" y2="12" stroke="#78350f" stroke-width="0.4" />
+              <circle cx="18.5" cy="11" r="3.4" fill="#ffffff" filter="url(#cardShadowV2)" />
+              <path d="M13.5 20 C13.5 16.8 15.8 15.2 18.5 15.2 C21.2 15.2 23.5 16.8 23.5 20 Z" fill="#ffffff" />
+              <line x1="5.5" y1="18.5" x2="11.5" y2="18.5" stroke="#a7f3d0" stroke-width="1.4" stroke-linecap="round" />
+            </svg>
+            <span>استعلام عن كشف حساب المشترك</span>
           </button>
         </div>
 
-        <div class="hero-features-chips">
-          <div class="hero-chip-item"><span>🛡️</span> حساب مستقل وسحابي لكل مدير</div>
-          <div class="hero-chip-item"><span>📲</span> متوافق 100% مع الجوال والواتساب</div>
-          <div class="hero-chip-item"><span>📑</span> كشوفات حساب PDF معتمدة</div>
-          <div class="hero-chip-item"><span>🤝</span> دعم الأسهم المشتركة ومستلم الشهر</div>
+        <!-- شريط ميزات ناعم وبسيط ومباشر بدون أيقونات زائدة -->
+        <div class="hero-features-chips simple-strip">
+          <span>تذكيرات واتساب فورية</span>
+          <span class="dot-sep">•</span>
+          <span>كشف حساب جاهز للطباعة</span>
+          <span class="dot-sep">•</span>
+          <span>حفظ آمن وسحابي</span>
         </div>
       </div>
 
-      <!-- 2. قسم العرض التفاعلي الحي لشاشات النظام (Interactive Showcase) -->
-      <div class="landing-showcase-card">
-        <!-- أزرار تبديل المعاينة التفاعلية -->
-        <div class="showcase-header-nav" id="showcase-nav">
-          <button type="button" class="showcase-tab-item active" data-slide="0">
-            <span>📊</span> مصفوفة الجمعية والتحصيل
-          </button>
-          <button type="button" class="showcase-tab-item" data-slide="1">
-            <span>📜</span> كشف الحساب المالي (PDF)
-          </button>
-          <button type="button" class="showcase-tab-item" data-slide="2">
-            <span>💬</span> تذكيرات الواتساب التلقائية
-          </button>
-          <button type="button" class="showcase-tab-item" data-slide="3">
-            <span>🔄</span> الأسهم المشتركة وتفاصيل الآيبان
-          </button>
-        </div>
-
-        <div class="showcase-window-container">
-          <div class="showcase-browser-frame">
-            <div class="browser-titlebar">
-              <div class="browser-dots">
-                <div class="browser-dot red"></div>
-                <div class="browser-dot yellow"></div>
-                <div class="browser-dot green"></div>
-              </div>
-              <div style="font-size: 0.82rem; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 0.4rem;">
-                <span>✨</span> <span>معاينة شاشات النظام الفعلية</span>
-              </div>
-            </div>
-
-            <!-- شريحة 1: لوحة تحكم المدير ومصفوفة الشهور -->
-            <div class="showcase-slide-body active" id="showcase-slide-0">
-              <div class="showcase-action-banner" style="display: flex; justify-content: space-between; align-items: center; background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 10px; padding: 0.75rem 1.25rem; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.6rem;">
-                <div style="font-weight: 700; color: #1e40af; font-size: 0.92rem; display: flex; align-items: center; gap: 0.4rem;">
-                  <span>📊</span> <span>هل ترغب في إدارة ومتابعة مصفوفة الشهور والتحصيل فعلياً؟</span>
-                </div>
-                <button type="button" class="btn btn-primary" onclick="openMatrixPage()" style="font-weight: 800; font-size: 0.88rem; padding: 0.55rem 1.2rem;">
-                  🚀 الدخول إلى مصفوفة الجمعية الحقيقية
-                </button>
-              </div>
-              <div class="mockup-stats-row">
-                <div class="mockup-stat-box blue">
-                  <div class="mockup-stat-val">120,000 ر.س</div>
-                  <div class="mockup-stat-lbl">إجمالي استلام الجمعية (12 شهراً)</div>
-                </div>
-                <div class="mockup-stat-box gold">
-                  <div class="mockup-stat-val">عبد الله أحمد 👑</div>
-                  <div class="mockup-stat-lbl">مستحق القبض هذا الشهر (10,000 ر.س)</div>
-                </div>
-                <div class="mockup-stat-box green">
-                  <div class="mockup-stat-val">100% نسبة الالتزام</div>
-                  <div class="mockup-stat-lbl">المحصل: 30,000 ر.س من 30,000 ر.س</div>
-                </div>
-              </div>
-
-              <table class="mockup-table">
-                <thead>
-                  <tr>
-                    <th># الدور</th>
-                    <th>اسم المشترك</th>
-                    <th>سهم الاشتراك</th>
-                    <th>يناير 2026</th>
-                    <th>فبراير 2026</th>
-                    <th>مارس 2026</th>
-                    <th>شهر الاستلام</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td><strong>1</strong></td>
-                    <td><strong>عبد الله أحمد</strong></td>
-                    <td>1,000 ر.س</td>
-                    <td><span class="badge" style="background:#ecfdf5; color:#065f46; font-size:0.75rem; padding:0.25rem 0.6rem; border-radius:6px;">تم الاستلام 🎁</span></td>
-                    <td><span class="badge" style="background:#ecfdf5; color:#065f46; font-size:0.75rem; padding:0.25rem 0.6rem; border-radius:6px;">مسدد ✅</span></td>
-                    <td><span class="badge" style="background:#ecfdf5; color:#065f46; font-size:0.75rem; padding:0.25rem 0.6rem; border-radius:6px;">مسدد ✅</span></td>
-                    <td><span style="font-weight:700; color:#b45309;">يناير 2026 👑</span></td>
-                  </tr>
-                  <tr>
-                    <td><strong>2</strong></td>
-                    <td><strong>محمد بن خالد</strong></td>
-                    <td>1,000 ر.س</td>
-                    <td><span class="badge" style="background:#ecfdf5; color:#065f46; font-size:0.75rem; padding:0.25rem 0.6rem; border-radius:6px;">مسدد ✅</span></td>
-                    <td><span class="badge" style="background:#ecfdf5; color:#065f46; font-size:0.75rem; padding:0.25rem 0.6rem; border-radius:6px;">تم الاستلام 🎁</span></td>
-                    <td><span class="badge" style="background:#ecfdf5; color:#065f46; font-size:0.75rem; padding:0.25rem 0.6rem; border-radius:6px;">مسدد ✅</span></td>
-                    <td><span style="font-weight:700; color:#b45309;">فبراير 2026 👑</span></td>
-                  </tr>
-                  <tr>
-                    <td><strong>3</strong></td>
-                    <td><strong>فهد + سامي (مشترك)</strong></td>
-                    <td>500 + 500 ر.س</td>
-                    <td><span class="badge" style="background:#ecfdf5; color:#065f46; font-size:0.75rem; padding:0.25rem 0.6rem; border-radius:6px;">مسدد ✅</span></td>
-                    <td><span class="badge" style="background:#ecfdf5; color:#065f46; font-size:0.75rem; padding:0.25rem 0.6rem; border-radius:6px;">مسدد ✅</span></td>
-                    <td><span class="badge" style="background:#fffbeb; color:#b45309; font-size:0.75rem; padding:0.25rem 0.6rem; border-radius:6px;">استلام هذا الشهر ⏳</span></td>
-                    <td><span style="font-weight:700; color:#b45309;">مارس 2026 👑</span></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- شريحة 2: كشف الحساب المالي للمشترك -->
-            <div class="showcase-slide-body" id="showcase-slide-1">
-              <div class="showcase-action-banner" style="display: flex; justify-content: space-between; align-items: center; background: #fefce8; border: 1.5px solid #fef08a; border-radius: 10px; padding: 0.75rem 1.25rem; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.6rem;">
-                <div style="font-weight: 700; color: #854d0e; font-size: 0.92rem; display: flex; align-items: center; gap: 0.4rem;">
-                  <span>📜</span> <span>استعرض كشف حسابك المالي المعتمد واطبع وثيقة PDF الآن:</span>
-                </div>
-                <button type="button" class="btn btn-gold" onclick="openMemberPortalPage()" style="font-weight: 800; font-size: 0.88rem; padding: 0.55rem 1.2rem;">
-                  📜 الدخول لبوابة كشف الحساب الفعلي
-                </button>
-              </div>
-              <div class="mockup-statement-card">
-                <div class="mockup-statement-header">
-                  <div>
-                    <span style="font-size: 0.78rem; color: #64748b; font-weight: 700;">📜 كشف حساب مالي معتمد</span>
-                    <h3 style="font-size: 1.3rem; color: var(--primary); font-weight: 800; margin-top: 0.15rem;">محمد بن خالد آل سعود</h3>
-                    <p style="font-size: 0.85rem; color: #64748b;">جمعية النخبة 2026 - السهم: 1,000 ر.س شهرياً</p>
-                  </div>
-                  <div class="mockup-stamp">معتمد وموثق 🛡️</div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; margin-bottom: 1.25rem;">
-                  <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 0.75rem; border-radius: 8px; font-size: 0.82rem;">
-                    <div style="color: #64748b;">إجمالي المستحق دفعه:</div>
-                    <div style="font-weight: 800; font-size: 1.1rem; color: #0f172a;">12,000 ر.س</div>
-                  </div>
-                  <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 0.75rem; border-radius: 8px; font-size: 0.82rem;">
-                    <div style="color: #166534;">المسدد حتى الآن:</div>
-                    <div style="font-weight: 800; font-size: 1.1rem; color: #15803d;">3,000 ر.س ✅</div>
-                  </div>
-                  <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 0.75rem; border-radius: 8px; font-size: 0.82rem;">
-                    <div style="color: #92400e;">موعد استلام جمعيتك:</div>
-                    <div style="font-weight: 800; font-size: 1.1rem; color: #b45309;">نوفمبر 2026 (12,000 ر.س) 👑</div>
-                  </div>
-                </div>
-
-                <div style="display: flex; gap: 0.6rem; justify-content: flex-end;">
-                  <button type="button" class="btn btn-sm btn-outline" style="font-weight: 700; font-size: 0.82rem;">🖨️ طباعة كشف الحساب (PDF)</button>
-                  <button type="button" class="btn btn-sm btn-primary" style="font-weight: 700; font-size: 0.82rem;">📲 مشاركة عبر الواتساب</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- شريحة 3: تذكيرات الواتساب الذكية -->
-            <div class="showcase-slide-body" id="showcase-slide-2">
-              <div class="showcase-action-banner" style="display: flex; justify-content: space-between; align-items: center; background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: 10px; padding: 0.75rem 1.25rem; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.6rem;">
-                <div style="font-weight: 700; color: #065f46; font-size: 0.92rem; display: flex; align-items: center; gap: 0.4rem;">
-                  <span>💬</span> <span>جرّب إرسال رسائل التذكير الحية وتضمين الآيبان البنكي:</span>
-                </div>
-                <button type="button" class="btn btn-success" onclick="openWhatsAppDemo()" style="font-weight: 800; font-size: 0.88rem; padding: 0.55rem 1.2rem;">
-                  💬 فتح نافذة رسائل الواتساب الحية
-                </button>
-              </div>
-              <div class="whatsapp-chat-box">
-                <div class="whatsapp-chat-header">
-                  <div class="whatsapp-avatar">💰</div>
-                  <div>
-                    <div style="font-weight: 700; font-size: 0.95rem;">نظام إدارة الجمعيات المالية</div>
-                    <div style="font-size: 0.75rem; opacity: 0.9;">متصل الآن (خدمة تذكير آلية)</div>
-                  </div>
-                </div>
-
-                <div class="whatsapp-chat-body">
-                  <div class="whatsapp-bubble">
-                    <p>السلام عليكم ورحمة الله وبركاته، أخي <strong>محمد</strong> 🌺</p>
-                    <p style="margin: 0.5rem 0;">نود تذكيركم بموعد سداد قسط <strong>"جمعية النخبة 2026"</strong> لشهر <strong>أكتوبر 2026</strong>:</p>
-                    <div style="background: #f1f5f9; border-radius: 8px; padding: 0.65rem; margin: 0.6rem 0; font-size: 0.82rem;">
-                      <div>💵 <strong>المبلغ المطلوب:</strong> 1,000 ر.س</div>
-                      <div>🎁 <strong>مستحق القبض هذا الشهر:</strong> عبد الله أحمد</div>
-                      <div>🏦 <strong>الحساب البنكي (IBAN):</strong> <code style="font-family: monospace; direction: ltr; display: inline-block;">SA44 8000 0201 6080 1000 1234</code></div>
-                      <div>💳 <strong>طريقة الاستلام:</strong> تحويل بنكي مباشر</div>
-                    </div>
-                    <p style="font-size: 0.8rem; color: #64748b;">🔗 يمكنك الاطلاع على كشف حسابك المحدث دائماً دون كلمة مرور عبر الرابط المباشر:</p>
-                    <a href="javascript:void(0)" class="whatsapp-magic-link-btn">
-                      📲 عرض كشف حسابي المالي المحدث
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- شريحة 4: مرونة الأسهم المشتركة وتفاصيل الآيبان -->
-            <div class="showcase-slide-body" id="showcase-slide-3">
-              <div class="showcase-action-banner" style="display: flex; justify-content: space-between; align-items: center; background: #f5f3ff; border: 1.5px solid #ddd6fe; border-radius: 10px; padding: 0.75rem 1.25rem; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.6rem;">
-                <div style="font-weight: 700; color: #5b21b6; font-size: 0.92rem; display: flex; align-items: center; gap: 0.4rem;">
-                  <span>🔄</span> <span>استكشف دليل المشتركين والحسابات البنكية وتقاسم الأدوار:</span>
-                </div>
-                <button type="button" class="btn btn-primary" onclick="openSharedSharesDemo()" style="font-weight: 800; font-size: 0.88rem; padding: 0.55rem 1.2rem;">
-                  🤝 فتح دليل الأعضاء والأسهم والآيبان
-                </button>
-              </div>
-              <div style="max-width: 650px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem;">
-                <h4 style="color: var(--primary); font-size: 1.1rem; font-weight: 800; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
-                  <span>🤝</span> ميزة الأسهم المشتركة والحسابات البنكية المدمجة
-                </h4>
-                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
-                  هل يرغب مشتركان في تقاسم نفس الشهر؟ أو تحويل المبلغ كاش أو بنكي؟ يدعم النظام ذلك بأعلى دقة:
-                </p>
-
-                <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.85rem; margin-bottom: 0.85rem;">
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-                    <span style="font-weight: 800; color: #0f172a;">الدور #4 (أبريل 2026) - سهم مشترك</span>
-                    <span style="background: #eff6ff; color: #1d4ed8; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.78rem; font-weight: 700;">سهم مقسم 50% / 50%</span>
-                  </div>
-                  <div style="font-size: 0.82rem; color: #334155; line-height: 1.6;">
-                    • <strong>المشترك أ:</strong> فهد السعيد (500 ر.س) - جوال: 0501111111<br>
-                    • <strong>المشترك ب:</strong> سامي الخالد (500 ر.س) - جوال: 0502222222<br>
-                    • <strong>الحساب البنكي للاستلام:</strong> بنك الراجحي - SA55 8000 0111 2222 3333 4444
-                  </div>
-                </div>
-
-                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 0.75rem; font-size: 0.8rem; color: #166534;">
-                  💡 عند إرسال رسالة التذكير عبر الواتساب، يتم إدراج بيانات الحساب البنكي للشخص المستحق تلقائياً، فيحول له الجميع بضغطة زر دون إحراج أو تأخير.
-                </div>
-              </div>
-            </div>
+      <!-- 2. شبكة الميزات الأساسية الثلاث (صياغة عامية راقية ومفهومة للجميع مع أيقونات 3D واقعية) -->
+      <div class="landing-features-grid compact-three">
+        <div class="landing-feature-card">
+          <div class="feature-icon-box">
+            <svg class="icon-3d icon-float-1" viewBox="0 0 60 60" width="48" height="48" aria-hidden="true">
+              <defs>
+                <filter id="cfShadow" x="-20%" y="-20%" width="150%" height="150%">
+                  <feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#000" flood-opacity="0.5" />
+                </filter>
+                <linearGradient id="goldCoinTop" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#fffbeb" />
+                  <stop offset="35%" stop-color="#fde047" />
+                  <stop offset="70%" stop-color="#f59e0b" />
+                  <stop offset="100%" stop-color="#b45309" />
+                </linearGradient>
+                <linearGradient id="goldCoinSide" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#d97706" />
+                  <stop offset="100%" stop-color="#78350f" />
+                </linearGradient>
+                <linearGradient id="greenBadgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#4ade80" />
+                  <stop offset="50%" stop-color="#16a34a" />
+                  <stop offset="100%" stop-color="#14532d" />
+                </linearGradient>
+                <linearGradient id="crownGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#fef08a" />
+                  <stop offset="50%" stop-color="#f59e0b" />
+                  <stop offset="100%" stop-color="#b45309" />
+                </linearGradient>
+              </defs>
+              <path d="M12 44 C12 48 24 48 24 44 L24 39 C24 43 12 43 12 39 Z" fill="url(#goldCoinSide)" />
+              <path d="M12 39 C12 43 24 43 24 39 L24 34 C24 38 12 38 12 34 Z" fill="url(#goldCoinSide)" />
+              <path d="M12 34 C12 38 24 38 24 34 L24 29 C24 33 12 33 12 29 Z" fill="url(#goldCoinSide)" />
+              <ellipse cx="18" cy="29" rx="10" ry="4.5" fill="url(#goldCoinTop)" filter="url(#cfShadow)" />
+              <path d="M13 22 L15.5 24.5 L18 18 L20.5 24.5 L23 22 L22 26 L14 26 Z" fill="url(#crownGold)" filter="url(#cfShadow)" stroke="#78350f" stroke-width="0.5" />
+              <circle cx="18" cy="18" r="1.2" fill="#fffbeb" />
+              <path d="M36 47 C36 51 48 51 48 47 L48 42 C48 46 36 46 36 42 Z" fill="url(#goldCoinSide)" />
+              <path d="M36 42 C36 46 48 46 48 42 L48 37 C48 41 36 41 36 37 Z" fill="url(#goldCoinSide)" />
+              <ellipse cx="42" cy="37" rx="10" ry="4.5" fill="url(#goldCoinTop)" filter="url(#cfShadow)" />
+              <circle cx="44" cy="29" r="9" fill="url(#greenBadgeGrad)" filter="url(#cfShadow)" stroke="#bbf7d0" stroke-width="1.2" />
+              <path d="M39.5 29 L42.5 32 L48.5 25.5" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M26 19 C31 15 37 16 40 19" fill="none" stroke="#38bdf8" stroke-width="2.4" stroke-linecap="round" />
+              <polygon points="41,19 37,16 38,21" fill="#38bdf8" />
+            </svg>
           </div>
-        </div>
-      </div>
-
-      <!-- 3. شبكة المميزات (ماذا يقدم لك النظام؟) -->
-      <div class="landing-section-title">
-        <h2>كل ما تحتاجه لإدارة جمعياتك المالية باحترافية تامة 💼</h2>
-        <p>مصمم خصيصاً ليناسب الجمعيات العائلية، جمعيات زملاء العمل، والجمعيات الكبيرة والشخصية</p>
-      </div>
-
-      <div class="landing-features-grid">
-        <div class="landing-feature-card">
-          <div class="feature-icon-box emerald">📊</div>
-          <h3>أتمتة الحسابات المالية 100%</h3>
-          <p>ودّع الحسابات اليدوية والورقية؛ النظام يحسب تلقائياً إجمالي المحصل، المتبقي، ومبالغ الاستلام لكل شهر مع إحصائيات بصرية فورية.</p>
+          <h3>مين دفع ومين استلم؟</h3>
+          <p>حساب تلقائي للمبالغ المسددة والمتبقية ومستلم الشهر، بدون أي لخبطة أو أخطاء حسابية.</p>
         </div>
 
         <div class="landing-feature-card">
-          <div class="feature-icon-box gold">📲</div>
-          <h3>تذكيرات الواتساب والروابط السحرية</h3>
-          <p>إرسال رسائل تذكير شهرية بنقرة واحدة عبر الواتساب مدمج بها رابط مباشر يفتح كشف حساب المشترك فوراً بدون الحاجة لحفظ كلمة مرور.</p>
-        </div>
-
-        <div class="landing-feature-card">
-          <div class="feature-icon-box blue">🤝</div>
-          <h3>الأسهم المشتركة وإعادة ترتيب الأدوار</h3>
-          <p>مرونة كاملة في اشتراك شخصين أو أكثر في نفس الدور، مع إمكانية سحب وإعادة ترتيب الأدوار وتبديل المواعيد بسلاسة تامة.</p>
-        </div>
-
-        <div class="landing-feature-card">
-          <div class="feature-icon-box purple">🏦</div>
-          <h3>دمج الآيبان (IBAN) وطرق الاستلام</h3>
-          <p>إمكانية تسجيل الحساب البنكي لمستلم كل شهر، ليظهر تلقائياً في رسائل التذكير لتمكين باقي الأعضاء من التحويل المباشر له بسهولة.</p>
-        </div>
-
-        <div class="landing-feature-card">
-          <div class="feature-icon-box emerald">📑</div>
-          <h3>كشوفات حساب رسمية معتمدة (PDF)</h3>
-          <p>توليد كشف حساب أنيق ومعتمد يوضح تاريخ كافة الدفعات والمواعيد، قابل للطباعة أو التنزيل كملف PDF رسمي ومشاركته بوضوح.</p>
-        </div>
-
-        <div class="landing-feature-card">
-          <div class="feature-icon-box gold">☁️</div>
-          <h3>عزل سحابي مستقل وأمان تام</h3>
-          <p>بيانات كل مدير معزولة ومحمية بالكامل، مع إمكانية الوصول للنظام من أي جوال أو جهاز كمبيوتر في أي وقت وبدون انقطاع.</p>
-        </div>
-      </div>
-
-      <!-- 4. بطاقة وصول المشتركين المباشرة (Quick Member Portal Access) -->
-      <div class="landing-member-callout" id="landing-member-section">
-        <div class="landing-member-info">
-          <div style="background: rgba(194, 136, 41, 0.25); border: 1px solid rgba(194, 136, 41, 0.4); display: inline-block; padding: 0.35rem 0.9rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 700; color: #fde68a; margin-bottom: 0.85rem;">
-            👤 بوابة المشتركين
+          <div class="feature-icon-box">
+            <svg class="icon-3d icon-float-2" viewBox="0 0 60 60" width="48" height="48" aria-hidden="true">
+              <defs>
+                <filter id="phoneShadowV2" x="-20%" y="-20%" width="150%" height="150%">
+                  <feDropShadow dx="0" dy="3.5" stdDeviation="2.5" flood-color="#000" flood-opacity="0.5" />
+                </filter>
+                <linearGradient id="phoneFrame" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#e2e8f0" />
+                  <stop offset="50%" stop-color="#94a3b8" />
+                  <stop offset="100%" stop-color="#475569" />
+                </linearGradient>
+                <linearGradient id="waGreen3D" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#4ade80" />
+                  <stop offset="40%" stop-color="#22c55e" />
+                  <stop offset="85%" stop-color="#16a34a" />
+                  <stop offset="100%" stop-color="#14532d" />
+                </linearGradient>
+                <linearGradient id="ibanCardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#38bdf8" />
+                  <stop offset="50%" stop-color="#0284c7" />
+                  <stop offset="100%" stop-color="#075985" />
+                </linearGradient>
+              </defs>
+              <rect x="7" y="9" width="28" height="43" rx="6" fill="url(#phoneFrame)" stroke="#ffffff" stroke-width="0.8" filter="url(#phoneShadowV2)" />
+              <rect x="9.5" y="13.5" width="23" height="34" rx="3" fill="#0b1329" />
+              <line x1="17" y1="11.5" x2="25" y2="11.5" stroke="#cbd5e1" stroke-width="1.4" stroke-linecap="round" />
+              <g transform="rotate(-8 38 35)" filter="url(#phoneShadowV2)">
+                <rect x="23" y="25" width="31" height="20" rx="3.5" fill="url(#ibanCardGrad)" stroke="rgba(255,255,255,0.6)" stroke-width="0.8" />
+                <rect x="26.5" y="28" width="5.5" height="4.5" rx="1" fill="#fde047" stroke="#92400e" stroke-width="0.4" />
+                <line x1="29.2" y1="28" x2="29.2" y2="32.5" stroke="#92400e" stroke-width="0.4" />
+                <line x1="34" y1="38" x2="49" y2="38" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" opacity="0.95" />
+                <line x1="26.5" y1="41.5" x2="38" y2="41.5" stroke="#bae6fd" stroke-width="1.2" stroke-linecap="round" opacity="0.8" />
+              </g>
+              <g filter="url(#phoneShadowV2)">
+                <circle cx="21" cy="27" r="12" fill="url(#waGreen3D)" stroke="#bbf7d0" stroke-width="1.2" />
+                <path d="M13.5 34.5 L11.5 40.5 L17.5 38 Z" fill="#16a34a" />
+                <path d="M15.5 22 C15 22.5 15 23.8 16.2 25.5 C17.4 27.2 19 28.8 20.8 29.8 C22.5 30.8 23.5 30.8 24 30.2 L25.4 28.8 C25.8 28.4 25.8 27.8 25.4 27.4 L23.9 26 C23.5 25.6 22.9 25.6 22.5 26 L22 26.5 C21.7 26.3 20.5 25.5 19.6 24.6 C18.7 23.7 18 22.5 17.8 22.2 L18.3 21.7 C18.7 21.3 18.7 20.7 18.3 20.3 L16.9 18.9 C16.5 18.5 15.9 18.5 15.5 18.9 Z" fill="#ffffff" />
+              </g>
+            </svg>
           </div>
-          <h3>هل أنت مشترك في جمعية؟</h3>
-          <p>
-            أدخل رقم جوالك والكود السري لعرض كشف حسابك المالي، أو اضغط مباشرة على الرابط السحري المستلم في رسالة الواتساب من مدير جمعيتك للدخول الفوري.
-          </p>
+          <h3>تذكيرات الواتساب والآيبان</h3>
+          <p>إشعار المشتركين بأقساطهم مع الحساب البنكي بضغطة زر ودون إحراج أو تأخير.</p>
         </div>
 
-        <div class="landing-member-box">
-          <form id="form-landing-member-login">
-            <div style="margin-bottom: 0.85rem;">
-              <label style="font-size: 0.82rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 0.3rem;">📱 رقم جوالك المسجل:</label>
-              <input type="tel" id="landing-member-phone" class="select-styled" style="width: 100%; direction: ltr; text-align: right; font-size: 0.95rem; padding: 0.6rem;" placeholder="0501234567" required>
-            </div>
-            <div style="margin-bottom: 1rem;">
-              <label style="font-size: 0.82rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 0.3rem;">🔐 الكود السري (4 أرقام):</label>
-              <input type="password" id="landing-member-pin" class="select-styled" style="width: 100%; direction: ltr; text-align: center; font-size: 1.1rem; letter-spacing: 0.25rem; font-family: monospace;" placeholder="••••" maxlength="6" required>
-            </div>
-            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-weight: 800; font-size: 0.95rem;">
-              🚀 فتح كشف حسابي الآن
-            </button>
-          </form>
+        <div class="landing-feature-card">
+          <div class="feature-icon-box">
+            <svg class="icon-3d icon-float-3" viewBox="0 0 60 60" width="48" height="48" aria-hidden="true">
+              <defs>
+                <filter id="docShadowV2" x="-20%" y="-20%" width="150%" height="150%">
+                  <feDropShadow dx="0" dy="3.5" stdDeviation="2.5" flood-color="#000" flood-opacity="0.5" />
+                </filter>
+                <linearGradient id="paperSheet" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#ffffff" />
+                  <stop offset="70%" stop-color="#f8fafc" />
+                  <stop offset="100%" stop-color="#e2e8f0" />
+                </linearGradient>
+                <linearGradient id="pdfGlossy" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f87171" />
+                  <stop offset="50%" stop-color="#ef4444" />
+                  <stop offset="100%" stop-color="#991b1b" />
+                </linearGradient>
+                <linearGradient id="auditGoldSeal" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#fef08a" />
+                  <stop offset="50%" stop-color="#f59e0b" />
+                  <stop offset="100%" stop-color="#78350f" />
+                </linearGradient>
+              </defs>
+              <rect x="16" y="8" width="32" height="44" rx="4" fill="#64748b" opacity="0.35" />
+              <path d="M12 11 C12 9 13.5 7.5 15.5 7.5 L36 7.5 L46 17.5 L46 48.5 C46 50.5 44.5 52 42.5 52 L15.5 52 C13.5 52 12 50.5 12 48.5 Z" fill="url(#paperSheet)" filter="url(#docShadowV2)" stroke="#cbd5e1" stroke-width="0.9" />
+              <path d="M36 7.5 L36 17.5 L46 17.5 Z" fill="#e2e8f0" stroke="#94a3b8" stroke-width="0.8" />
+              <path d="M36 17.5 L46 17.5" stroke="#64748b" stroke-width="0.5" />
+              <rect x="9" y="14" width="15" height="8" rx="2.2" fill="url(#pdfGlossy)" filter="url(#docShadowV2)" stroke="#fca5a5" stroke-width="0.5" />
+              <text x="16.5" y="20" font-size="5.5" font-weight="900" fill="#ffffff" text-anchor="middle" font-family="Arial, sans-serif" letter-spacing="0.2">PDF</text>
+              <line x1="28" y1="18" x2="41" y2="18" stroke="#1e293b" stroke-width="2.4" stroke-linecap="round" />
+              <line x1="16" y1="27" x2="42" y2="27" stroke="#475569" stroke-width="2" stroke-linecap="round" />
+              <line x1="16" y1="33" x2="34" y2="33" stroke="#64748b" stroke-width="2" stroke-linecap="round" />
+              <line x1="16" y1="39" x2="38" y2="39" stroke="#475569" stroke-width="2" stroke-linecap="round" />
+              <g filter="url(#docShadowV2)">
+                <path d="M35 46 L33 53 L38 50 L43 53 L41 46 Z" fill="#0284c7" />
+                <circle cx="38" cy="44" r="6.5" fill="url(#auditGoldSeal)" stroke="#fef08a" stroke-width="0.8" />
+                <path d="M35.5 44 L37.2 45.8 L40.8 42.2" fill="none" stroke="#291404" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+              </g>
+            </svg>
+          </div>
+          <h3>كشف حساب واضح لكل مشترك</h3>
+          <p>رابط مباشر وملف PDF يوضح لكل مشترك كم دفع وكم متبقي عليه وموعد قبضه.</p>
         </div>
       </div>
 
-      <!-- 5. تذييل الصفحة الرئيسية -->
-      <footer class="landing-footer">
-        <div style="display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 1rem; flex-wrap: wrap; font-weight: 600;">
-          <a href="javascript:void(0)" onclick="openModal('modal-manager-auth')" style="color: var(--primary); text-decoration: none;">تسجيل دخول المدير</a>
-          <span style="color: #cbd5e1;">•</span>
-          <a href="javascript:void(0)" onclick="openModal('modal-manager-auth')" style="color: var(--primary); text-decoration: none;">إنشاء حساب مدير جديد</a>
-          <span style="color: #cbd5e1;">•</span>
-          <a href="#landing-member-section" style="color: var(--primary); text-decoration: none;">بوابة المشتركين</a>
+      <!-- تذييل الصفحة المدمج مع بيانات المطور والتواصل التفاعلية ثلاثية الأبعاد -->
+      <footer class="landing-footer compact-footer">
+        <div class="footer-creator-badge">
+          <span class="creator-label">صُنع وتطوير بواسطة: <strong>محمد العزب</strong></span>
+          <span class="dot-sep">•</span>
+          <a href="https://wa.me/966598699077" target="_blank" rel="noopener noreferrer" class="footer-contact-pill pill-whatsapp" title="تواصل مباشر عبر واتساب">
+            <svg class="contact-svg-icon" viewBox="0 0 32 32" width="18" height="18" aria-hidden="true">
+              <defs>
+                <linearGradient id="waGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#2fe574" />
+                  <stop offset="100%" stop-color="#128c7e" />
+                </linearGradient>
+                <filter id="waShadow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#000" flood-opacity="0.35" />
+                </filter>
+              </defs>
+              <circle cx="16" cy="16" r="15" fill="url(#waGrad)" filter="url(#waShadow)" />
+              <path fill="#ffffff" d="M16 6.8c-5.1 0-9.2 4.1-9.2 9.2 0 1.6.4 3.2 1.2 4.6L6.8 25.2l4.8-1.2c1.4.7 2.9 1.1 4.4 1.1 5.1 0 9.2-4.1 9.2-9.2 0-2.5-1-4.8-2.7-6.5S18.5 6.8 16 6.8zm5.4 13.1c-.2.6-1.3 1.2-1.8 1.2-.5 0-.9.2-3.1-.7-2.6-1-4.3-3.7-4.4-3.9-.1-.1-1.1-1.5-1.1-2.8s.7-2 1-2.2c.2-.2.5-.3.8-.3h.6c.2 0 .4 0 .6.5.2.5.8 1.9.8 2 0 .1.1.3 0 .4-.1.2-.2.3-.3.4-.1.1-.3.3-.4.4-.2.2-.3.3-.1.6.3.5.9 1.4 1.7 2.1 1.1.9 2 1.2 2.3 1.4.3.1.5.1.6-.1.2-.2.8-.9 1-1.2.2-.3.4-.2.7-.1.3.1 1.9.9 2.2 1.1.3.1.5.2.6.4 0 .2 0 1.2-.2 1.8z"/>
+            </svg>
+            <span dir="ltr">0598699077</span>
+          </a>
+          <span class="dot-sep">•</span>
+          <a href="mailto:mo.al3azb@gmail.com" class="footer-contact-pill pill-gmail" title="إرسال رسالة مباشرة عبر جيميل">
+            <svg class="contact-svg-icon" viewBox="0 0 32 32" width="18" height="18" aria-hidden="true">
+              <defs>
+                <filter id="gmailShadow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#000" flood-opacity="0.3" />
+                </filter>
+              </defs>
+              <rect x="2" y="2" width="28" height="28" rx="7" fill="#ffffff" filter="url(#gmailShadow)" />
+              <path fill="#4285f4" d="M7 23.5V11.2l9 6.8 9-6.8v12.3H7z" opacity="0.1" />
+              <path fill="#ea4335" d="M7 8.5h18c1.1 0 2 .9 2 2v2.2L16 20 5 12.7V10.5c0-1.1.9-2 2-2z" />
+              <path fill="#4285f4" d="M5 10.5v11c0 1.1.9 2 2 2h3V12.7L5 10.5z" />
+              <path fill="#34a853" d="M22 23.5h3c1.1 0 2-.9 2-2v-11l-5 2.2v10.8z" />
+              <path fill="#fbbc05" d="M16 20l6-4.5v-3.8L16 16.2l-6-4.5v3.8z" />
+            </svg>
+            <span dir="ltr">mo.al3azb@gmail.com</span>
+          </a>
         </div>
-        <p>© 2026 نظام إدارة الجمعيات المالية المتكامل | منصة رقمية سحابية موثوقة</p>
+        <p class="footer-copy-text">© 2026 نظام إدارة الجمعيات المالية | بسيط • دقيق • آمن</p>
       </footer>
 
     </section>
@@ -485,17 +479,61 @@
         <!-- شريط التحكم والفلترة -->
         <div class="action-bar">
           <div class="month-selector-group">
-            <label for="select-active-month"><strong>📅 الشهر المعروض:</strong></label>
-            <select id="select-active-month" class="select-styled">
-              <!-- يتم تعبئة الشهور ديناميكياً -->
-            </select>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <label for="select-active-month" style="font-size: 0.88rem; font-weight: 700; color: #e2e8f0;">📅 الشهر المعروض:</label>
+              <select id="select-active-month" class="select-styled">
+                <!-- يتم تعبئة الشهور ديناميكياً -->
+              </select>
+            </div>
 
-            <label for="filter-status" style="margin-right: 0.8rem;"><strong>🔍 تصفية:</strong></label>
-            <select id="filter-status" class="select-styled">
-              <option value="all">عرض جميع المشتركين</option>
-              <option value="unpaid">المتأخرين فقط بهذا الشهر</option>
-              <option value="paid">الذين سددوا فقط</option>
-            </select>
+            <!-- مكون تصفية المشتركين المتقدم (Custom Filter Dropdown) -->
+            <div class="custom-filter-dropdown" id="custom-filter-container">
+              <button type="button" class="filter-dropdown-trigger" id="btn-toggle-filter-dropdown" title="تصفية المشتركين وعرض الخيارات المتاحة">
+                <span style="font-size: 0.95rem;">🔍</span>
+                <span style="color: #94a3b8; font-size: 0.82rem;">تصفية:</span>
+                <span id="filter-current-label" style="color: #f8fafc; font-weight: 700;">عرض جميع المشتركين</span>
+                <span class="filter-badge" id="filter-active-count">0</span>
+                <span class="dropdown-chevron" style="font-size: 0.75rem; color: #94a3b8; transition: transform 0.2s;">▾</span>
+              </button>
+
+              <button type="button" id="btn-clear-filter" class="btn-clear-filter" style="display: none;" title="إلغاء التصفية وعرض الكل">
+                ✕
+              </button>
+
+              <!-- القائمة المنسدلة المخصصة للتصنيفات الرئيسية فقط -->
+              <div class="filter-dropdown-menu" id="filter-dropdown-menu">
+                <div class="dropdown-item active" data-filter="all">
+                  <div class="dropdown-item-content">
+                    <span style="font-size: 1rem;">👥</span>
+                    <span>عرض جميع المشتركين</span>
+                  </div>
+                  <span class="item-count" id="count-filter-all">0</span>
+                </div>
+
+                <div class="dropdown-item" data-filter="unpaid">
+                  <div class="dropdown-item-content">
+                    <span style="font-size: 1rem;">⏳</span>
+                    <span>المتأخرين عن السداد</span>
+                  </div>
+                  <span class="item-count text-danger" id="count-filter-unpaid">0</span>
+                </div>
+
+                <div class="dropdown-item" data-filter="paid">
+                  <div class="dropdown-item-content">
+                    <span style="font-size: 1rem;">✅</span>
+                    <span>المسددين لهذا الشهر</span>
+                  </div>
+                  <span class="item-count text-success" id="count-filter-paid">0</span>
+                </div>
+              </div>
+
+              <!-- عنصر select المخفي للتوافق البرمجي -->
+              <select id="filter-status" style="display: none;">
+                <option value="all">عرض جميع المشتركين</option>
+                <option value="unpaid">المتأخرين عن السداد</option>
+                <option value="paid">المسددين لهذا الشهر</option>
+              </select>
+            </div>
           </div>
 
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
@@ -1364,125 +1402,121 @@
   </div>
 
   <!-- نافذة تسجيل دخول وإدارة حسابات المديرين (Multi-Tenant Auth) -->
+  <!-- نافذة تسجيل دخول وإدارة حسابات المديرين (Multi-Tenant Auth) -->
   <div class="modal-overlay" id="modal-manager-auth">
-    <div class="modal-card" style="max-width: 500px;">
+    <div class="modal-card" style="max-width: 480px;">
       <div class="modal-header">
         <div>
-          <h3 style="color: var(--primary); display: flex; align-items: center; gap: 0.4rem;">
-            <span>🛡️</span> حساب مدير الجمعيات
+          <h3 style="color: #ffffff; font-size: 1.2rem; font-weight: 700; margin: 0;">
+            حساب مدير الجمعيات
           </h3>
-          <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.15rem;">
-            تسجيل دخول مدير مسجل أو إنشاء حساب جديد لإدارة جمعياتك الخاصة
+          <p style="font-size: 0.82rem; color: #94a3b8; margin-top: 0.25rem;">
+            تسجيل الدخول أو إنشاء حساب جديد لإدارة الجمعيات
           </p>
         </div>
         <button class="close-btn" id="btn-close-manager-auth">&times;</button>
       </div>
 
       <!-- شريط تنبيه الحساب النشط حالياً -->
-      <div id="mgr-active-status-bar" style="display: none; background: linear-gradient(135deg, rgba(6, 78, 59, 0.35), rgba(15, 23, 42, 0.7)); border: 1px solid rgba(0, 255, 136, 0.4); border-radius: 14px; padding: 1.25rem 1rem; margin-bottom: 1.25rem; text-align: center; flex-direction: column; gap: 0.85rem;">
-        <div style="font-size: 1.05rem; font-weight: 800; color: #f8fafc;">
-          🟢 أنت مسجل الدخول حالياً
+      <div id="mgr-active-status-bar" style="display: none; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 1.1rem; margin-bottom: 1.25rem; text-align: center; flex-direction: column; gap: 0.75rem;">
+        <div style="font-size: 0.95rem; font-weight: 700; color: #f8fafc;">
+          أنت مسجل الدخول حالياً
         </div>
-        <div style="font-size: 0.9rem; color: #94a3b8;">
-          الحساب النشط: <strong id="mgr-active-status-name" style="color: #00ff88; font-weight: 800;">مدير مسجل</strong>
+        <div style="font-size: 0.86rem; color: #94a3b8;">
+          الحساب النشط: <strong id="mgr-active-status-name" style="color: #38bdf8; font-weight: 700;">مدير مسجل</strong>
         </div>
-        <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-top: 0.35rem;">
-          <button type="button" id="btn-enter-dashboard-active" class="btn btn-sm btn-primary" style="font-size: 0.85rem; font-weight: 800; padding: 0.55rem 1.1rem;">
-            🚀 المتابعة للجمعيات
+        <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-top: 0.25rem;">
+          <button type="button" id="btn-enter-dashboard-active" class="btn btn-sm btn-primary" style="font-size: 0.84rem; font-weight: 600; padding: 0.5rem 1rem;">
+            المتابعة للجمعيات
           </button>
-          <button type="button" id="btn-open-profile-from-auth" class="btn btn-sm btn-gold" style="font-size: 0.85rem; font-weight: 800; padding: 0.55rem 1.1rem;">
-            ⚙️ لوحة التحكم والإعدادات
+          <button type="button" id="btn-open-profile-from-auth" class="btn btn-sm btn-gold" style="font-size: 0.84rem; font-weight: 600; padding: 0.5rem 1rem;">
+            لوحة الإعدادات
           </button>
-          <button type="button" id="btn-logout-current-mgr" class="btn btn-sm btn-outline" style="font-size: 0.85rem; color: #fca5a5; border-color: rgba(244, 63, 94, 0.4); padding: 0.55rem 1.1rem; font-weight: 800;">
-            🚪 تسجيل الخروج
+          <button type="button" id="btn-logout-current-mgr" class="btn btn-sm btn-outline" style="font-size: 0.84rem; color: #fca5a5; border-color: rgba(244, 63, 94, 0.4); padding: 0.5rem 1rem; font-weight: 600;">
+            تسجيل الخروج
           </button>
         </div>
       </div>
 
-      <!-- تبويبات التبديل الثنائية فقط -->
-      <div class="auth-tabs-row" style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;">
-        <button type="button" id="tab-auth-login" class="auth-tab-btn active" style="flex: 1; font-size: 0.88rem; font-weight: 700; padding: 0.6rem 0.4rem;">
-          🔐 تسجيل دخول مدير مسجل
+      <!-- تبويبات التبديل -->
+      <div class="auth-tabs-row">
+        <button type="button" id="tab-auth-login" class="auth-tab-btn active">
+          تسجيل الدخول
         </button>
-        <button type="button" id="tab-auth-register" class="auth-tab-btn" style="flex: 1; font-size: 0.88rem; font-weight: 700; padding: 0.6rem 0.4rem;">
-          ✨ إنشاء حساب مدير جديد
+        <button type="button" id="tab-auth-register" class="auth-tab-btn">
+          إنشاء حساب جديد
         </button>
       </div>
 
-      <!-- نموذج 1: تسجيل دخول مدير مسجل سابقاً بتصميم مبسط وواضح -->
+      <!-- نموذج 1: تسجيل دخول مدير مسجل -->
       <form id="form-manager-login">
-        <div style="margin-bottom: 0.85rem;">
-          <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 0.35rem;">البريد الإلكتروني أو رقم الجوال:</label>
-          <input type="text" id="mgr-login-email" class="select-styled" style="width: 100%; direction: ltr; text-align: right;" placeholder="البريد الإلكتروني أو 05xxxxxxxx" required>
+        <div style="margin-bottom: 1rem;">
+          <label style="font-size: 0.86rem; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 0.4rem;">البريد الإلكتروني أو رقم الجوال</label>
+          <input type="text" id="mgr-login-email" class="select-styled" style="width: 100%; direction: ltr; text-align: right;" placeholder="name@example.com أو 05xxxxxxxx" required>
         </div>
 
-        <div style="margin-bottom: 1.15rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
-            <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b;">كلمة المرور:</label>
-            <a href="javascript:void(0)" id="link-forgot-pwd" style="color: #0284c7; font-weight: 700; font-size: 0.8rem; text-decoration: underline;">نسيت كلمة المرور؟ 🔑</a>
-          </div>
+        <div style="margin-bottom: 1.25rem;">
+          <label style="font-size: 0.86rem; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 0.4rem;">كلمة المرور</label>
           <div style="position: relative;">
             <input type="password" id="mgr-login-password" class="select-styled" style="width: 100%; padding-left: 2.5rem;" placeholder="••••••••" required>
-            <button type="button" id="btn-toggle-login-pass" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #64748b; font-size: 1.1rem; padding: 0.2rem 0.4rem;" title="إظهار/إخفاء">👁️</button>
+            <button type="button" id="btn-toggle-login-pass" class="auth-eye-btn" title="إظهار/إخفاء">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div style="text-align: left; margin-top: 0.45rem;">
+            <a href="javascript:void(0)" id="link-forgot-pwd" style="color: #38bdf8; font-size: 0.82rem; font-weight: 600; text-decoration: none;">نسيت كلمة المرور؟</a>
           </div>
         </div>
 
-        <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-bottom: 0.85rem;">
-          <button type="submit" class="btn btn-primary" style="flex: 1; font-weight: 800; padding: 0.7rem; font-size: 0.95rem;">
-            🚀 دخول للوحة التحكم
+        <div style="margin-bottom: 0.5rem;">
+          <button type="submit" class="btn btn-primary" style="width: 100%; font-weight: 700; padding: 0.75rem; font-size: 0.95rem; border-radius: 8px;">
+            تسجيل الدخول
           </button>
-          <button type="button" class="btn btn-outline" id="btn-cancel-mgr-login">إلغاء</button>
-        </div>
-        <div style="text-align: center; font-size: 0.82rem; color: #64748b;">
-          تريد إنشاء حساب مدير جديد؟ <a href="javascript:void(0)" id="link-switch-to-reg" style="color: var(--primary); font-weight: 700; text-decoration: underline;">اضغط هنا للإنشاء</a>
         </div>
       </form>
 
-      <!-- نموذج 2: تسجيل مدير جديد بنظام فارغ تماماً مع إرسال رابط تأكيد للبريد -->
+      <!-- نموذج 2: تسجيل مدير جديد بتصميم منظم ومتوازن -->
       <form id="form-manager-register" style="display: none;">
-        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 0.85rem; margin-bottom: 1.15rem; font-size: 0.82rem; color: #166534; line-height: 1.55;">
-          ✨ <strong>إنشاء حساب مدير جديد:</strong><br>
-          سيصلك رابط تأكيد فوري إلى بريدك الإلكتروني للتحقق من صحته وتفعيل الحساب.
+        <div style="margin-bottom: 0.85rem;">
+          <label style="font-size: 0.86rem; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 0.35rem;">الاسم الكامل</label>
+          <input type="text" id="mgr-reg-name" class="select-styled" style="width: 100%;" placeholder="الاسم الكامل" required>
         </div>
 
-        <div style="margin-bottom: 0.75rem;">
-          <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 0.3rem;">اسم المدير الكامل:</label>
-          <input type="text" id="mgr-reg-name" class="select-styled" style="width: 100%;" placeholder="مثال: محمد بن جمال" required>
-        </div>
-
-        <div style="margin-bottom: 0.75rem;">
-          <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 0.3rem;">البريد الإلكتروني:</label>
-          <input type="email" id="mgr-reg-email" class="select-styled" style="width: 100%; direction: ltr; text-align: left;" placeholder="manager@example.com" required>
-        </div>
-
-        <div style="margin-bottom: 0.75rem;">
-          <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 0.3rem;">
-            رقم الجوال والواتساب السعودي: <span style="font-weight: 400; font-size: 0.76rem; color: #64748b;">(10 أرقام تبدأ بـ 05)</span>
-          </label>
-          <input type="tel" id="mgr-reg-phone" class="select-styled" style="width: 100%; direction: ltr; text-align: right;" placeholder="05xxxxxxxx" maxlength="10">
-        </div>
-
-        <div style="margin-bottom: 0.75rem;">
-          <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 0.3rem;">كلمة المرور (6 خانات على الأقل):</label>
-          <div style="position: relative;">
-            <input type="password" id="mgr-reg-password" class="select-styled" style="width: 100%; padding-left: 2.5rem;" placeholder="••••••••" minlength="6" required>
-            <button type="button" id="btn-toggle-reg-pass" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #64748b; font-size: 1.1rem; padding: 0.2rem 0.4rem;" title="إظهار/إخفاء">👁️</button>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.85rem;">
+          <div>
+            <label style="font-size: 0.86rem; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 0.35rem;">البريد الإلكتروني</label>
+            <input type="email" id="mgr-reg-email" class="select-styled" style="width: 100%; direction: ltr; text-align: left;" placeholder="name@example.com" required>
+          </div>
+          <div>
+            <label style="font-size: 0.86rem; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 0.35rem;">رقم الجوال (اختياري)</label>
+            <input type="tel" id="mgr-reg-phone" class="select-styled" style="width: 100%; direction: ltr; text-align: right;" placeholder="05xxxxxxxx" maxlength="10">
           </div>
         </div>
 
-        <div style="margin-bottom: 1.15rem;">
-          <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 0.3rem;">تأكيد كلمة المرور:</label>
-          <input type="password" id="mgr-reg-password-confirm" class="select-styled" style="width: 100%;" placeholder="أعد كتابة كلمة المرور للتأكيد" minlength="6" required>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.15rem;">
+          <div>
+            <label style="font-size: 0.86rem; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 0.35rem;">كلمة المرور</label>
+            <div style="position: relative;">
+              <input type="password" id="mgr-reg-password" class="select-styled" style="width: 100%; padding-left: 2.2rem;" placeholder="6 خانات فأكثر" minlength="6" required>
+              <button type="button" id="btn-toggle-reg-pass" class="auth-eye-btn" title="إظهار/إخفاء">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+          <div>
+            <label style="font-size: 0.86rem; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 0.35rem;">تأكيد كلمة المرور</label>
+            <input type="password" id="mgr-reg-password-confirm" class="select-styled" style="width: 100%;" placeholder="تأكيد كلمة المرور" minlength="6" required>
+          </div>
         </div>
 
-        <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-bottom: 0.75rem;">
-          <button type="submit" class="btn btn-success" style="flex: 1; font-weight: 800; padding: 0.7rem; font-size: 0.95rem;">
-            ✨ مراجعة وتأكيد إنشاء الحساب
+        <div style="margin-bottom: 0.75rem;">
+          <button type="submit" class="btn btn-primary" style="width: 100%; font-weight: 700; padding: 0.75rem; font-size: 0.95rem; border-radius: 8px;">
+            إنشاء الحساب
           </button>
-          <button type="button" class="btn btn-outline" id="btn-cancel-mgr-reg">إلغاء</button>
         </div>
-        <div style="text-align: center; font-size: 0.82rem; color: #64748b;">
-          لديك حساب مسجل بالفعل؟ <a href="javascript:void(0)" id="link-switch-to-login" style="color: var(--primary); font-weight: 700; text-decoration: underline;">تسجيل الدخول من هنا</a>
+
+        <div style="text-align: center; font-size: 0.8rem; color: #94a3b8; line-height: 1.5;">
+          سيصلك رابط تأكيد إلى بريدك الإلكتروني للتحقق وتفعيل الحساب.
         </div>
       </form>
     </div>
@@ -1493,51 +1527,51 @@
     <div class="modal-card" style="max-width: 440px;">
       <div class="modal-header">
         <div>
-          <h3 style="color: #ffffff; display: flex; align-items: center; gap: 0.45rem;">
-            <span>🔑</span> استعادة كلمة المرور
+          <h3 style="color: #ffffff; font-size: 1.15rem; font-weight: 700; margin: 0;">
+            استعادة كلمة المرور
           </h3>
-          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem;">
+          <p style="font-size: 0.82rem; color: #94a3b8; margin-top: 0.25rem;">
             إعادة تعيين كلمة المرور لحساب المدير
           </p>
         </div>
         <button class="close-btn" id="btn-close-forgot-pwd">&times;</button>
       </div>
 
-      <div class="modal-scrollable-body" style="padding: 1.25rem;">
+      <div class="modal-scrollable-body" style="padding: 0.5rem 0.25rem;">
         <!-- نموذج إرسال الرابط للبريد -->
         <div id="section-reset-via-email">
           <div style="margin-bottom: 1rem;">
-            <label style="font-size: 0.82rem; font-weight: 700; color: #e2e8f0; display: block; margin-bottom: 0.35rem;">✉️ البريد الإلكتروني المسجل:</label>
+            <label style="font-size: 0.86rem; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 0.4rem;">البريد الإلكتروني المسجل</label>
             <input type="email" id="forgot-pwd-email" class="select-styled" style="width: 100%; direction: ltr; text-align: left;" placeholder="name@example.com" required>
           </div>
 
-          <button type="button" id="btn-send-reset-email" class="btn btn-primary" style="width: 100%; font-size: 0.9rem; font-weight: 800; padding: 0.7rem; margin-bottom: 0.85rem;">
-            📩 إرسال رابط استعادة كلمة المرور
+          <button type="button" id="btn-send-reset-email" class="btn btn-primary" style="width: 100%; font-size: 0.92rem; font-weight: 700; padding: 0.75rem; border-radius: 8px; margin-bottom: 0.85rem;">
+            إرسال رابط الاستعادة
           </button>
 
-          <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 0.65rem 0.85rem; font-size: 0.76rem; color: #94a3b8; line-height: 1.5; margin-bottom: 0.5rem;">
-            💡 <strong style="color: #38bdf8;">تنبيه هام:</strong> يصل الرابط من جوجل (<span style="direction: ltr; display: inline-block;">noreply@gam3eyaty.firebaseapp.com</span>). إذا لم تجده في صندوق الوارد، يُرجى مراجعة مجلد <strong>الرسائل غير المرغوب فيها (Spam)</strong>.
+          <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 0.65rem 0.85rem; font-size: 0.78rem; color: #94a3b8; line-height: 1.5; margin-bottom: 0.5rem;">
+            <strong style="color: #38bdf8;">ملاحظة:</strong> يصل الرابط من عنوان (<span style="direction: ltr; display: inline-block;">noreply@gam3eyaty.firebaseapp.com</span>). إذا لم تجده في البريد الوارد، يُرجى فحص مجلد الرسائل غير المرغوب فيها (Spam).
           </div>
         </div>
 
         <!-- رابط بديل أنيق للتعيين الفوري برمز PIN -->
-        <div style="border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 0.85rem; margin-top: 0.85rem; text-align: center;">
-          <button type="button" id="btn-toggle-pin-reset" style="background: none; border: none; color: #fbbf24; font-size: 0.8rem; font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0.25rem 0.5rem;">
-            ⚡ أو التعيين الفوري برمز PIN (بدون انتظار الإيميل)
+        <div style="border-top: 1px solid rgba(148, 163, 184, 0.15); padding-top: 0.85rem; margin-top: 0.85rem; text-align: center;">
+          <button type="button" id="btn-toggle-pin-reset" style="background: none; border: none; color: #fbbf24; font-size: 0.82rem; font-weight: 600; cursor: pointer; text-decoration: none; padding: 0.25rem 0.5rem;">
+            التعيين المباشر برمز PIN (بدون انتظار البريد)
           </button>
 
-          <!-- قسم التعيين بـ PIN (مخفي افتراضياً لعدم التشويش) -->
-          <div id="section-reset-via-pin" style="display: none; margin-top: 0.85rem; text-align: right; background: rgba(251, 191, 36, 0.07); border: 1px solid rgba(251, 191, 36, 0.25); border-radius: 10px; padding: 0.85rem;">
+          <!-- قسم التعيين بـ PIN (مخفي افتراضياً) -->
+          <div id="section-reset-via-pin" style="display: none; margin-top: 0.85rem; text-align: right; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(251, 191, 36, 0.25); border-radius: 10px; padding: 0.85rem;">
             <div style="margin-bottom: 0.65rem;">
-              <label style="font-size: 0.8rem; font-weight: 700; color: #fbbf24; display: block; margin-bottom: 0.25rem;">رمز PIN للمدير:</label>
+              <label style="font-size: 0.82rem; font-weight: 600; color: #fbbf24; display: block; margin-bottom: 0.3rem;">رمز PIN للمدير</label>
               <input type="password" id="forgot-pwd-pin" class="select-styled" style="width: 100%; direction: ltr; text-align: left;" placeholder="الافتراضي: 1234">
             </div>
             <div style="margin-bottom: 0.75rem;">
-              <label style="font-size: 0.8rem; font-weight: 700; color: #e2e8f0; display: block; margin-bottom: 0.25rem;">كلمة المرور الجديدة:</label>
+              <label style="font-size: 0.82rem; font-weight: 600; color: #e2e8f0; display: block; margin-bottom: 0.3rem;">كلمة المرور الجديدة</label>
               <input type="password" id="forgot-pwd-new-pass" class="select-styled" style="width: 100%;" placeholder="6 خانات أو أكثر">
             </div>
-            <button type="button" id="btn-reset-with-pin" class="btn btn-gold" style="width: 100%; font-size: 0.86rem; font-weight: 800; padding: 0.65rem;">
-              🔓 حفظ وتعيين كلمة المرور فوراً
+            <button type="button" id="btn-reset-with-pin" class="btn btn-gold" style="width: 100%; font-size: 0.88rem; font-weight: 700; padding: 0.65rem; border-radius: 8px;">
+              حفظ كلمة المرور الجديدة
             </button>
           </div>
         </div>
