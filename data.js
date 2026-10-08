@@ -1,16 +1,16 @@
 /**
  * البيانات المعتمدة لجمعيات النظام
  * مستخرجة بدقة ومطابقة لسجلات المشتركين الحقيقية والنسخة الاحتياطية المعتمدة
- * تاريخ التحديث: 2026-10-05
+ * تاريخ التحديث: 2026-10-08
  */
 
 const INITIAL_DATA = {
   "currency": "ر.س",
   "lastUpdated": {
-    "seconds": 1791123559,
-    "nanoseconds": 167000000
+    "seconds": 1791456000,
+    "nanoseconds": 0
   },
-  "dataVersion": "2026.10.05_v3.9",
+  "dataVersion": "2026.10.08_v4.0",
   "publishedUrl": "https://gam3eyaty.netlify.app",
   "adminPin": "1234",
   "pinsSecuredV2": true,
@@ -1130,38 +1130,38 @@ const INITIAL_DATA = {
           "pins": [
             "5337"
           ],
-          "payoutDate": "مايو 2026",
+          "payoutDate": "يونيو 2026",
           "payoutMethods": [
             "bank"
           ],
-          "turnMonth": "may",
+          "turnMonth": "jun",
           "phones": [
             "0595904643"
           ],
           "payments": {
-            "dec": [
-              "future"
-            ],
-            "may": [
+            "jun": [
               "payout"
             ],
-            "oct": [
-              "future"
-            ],
-            "jun": [
+            "jul": [
               "paid"
             ],
             "aug": [
               "paid"
             ],
+            "sep": [
+              "paid"
+            ],
+            "oct": [
+              "unpaid"
+            ],
             "nov": [
               "future"
             ],
-            "jul": [
-              "paid"
+            "dec": [
+              "future"
             ],
-            "sep": [
-              "unpaid"
+            "jan_2027": [
+              "future"
             ]
           },
           "turn": 1,
@@ -1188,32 +1188,32 @@ const INITIAL_DATA = {
           "codes": [
             "1098"
           ],
-          "payoutDate": "يونيو 2026",
-          "turnMonth": "jun",
+          "payoutDate": "يوليو 2026",
+          "turnMonth": "jul",
           "payments": {
-            "may": [
+            "jun": [
               "paid"
             ],
-            "dec": [
-              "future"
-            ],
-            "jun": [
+            "jul": [
               "payout"
-            ],
-            "oct": [
-              "future"
             ],
             "aug": [
               "paid"
             ],
+            "sep": [
+              "paid"
+            ],
+            "oct": [
+              "unpaid"
+            ],
             "nov": [
               "future"
             ],
-            "sep": [
-              "unpaid"
+            "dec": [
+              "future"
             ],
-            "jul": [
-              "paid"
+            "jan_2027": [
+              "future"
             ]
           },
           "shares": [
@@ -1235,29 +1235,29 @@ const INITIAL_DATA = {
         },
         {
           "payments": {
+            "jun": [
+              "paid"
+            ],
             "jul": [
+              "paid"
+            ],
+            "aug": [
               "payout"
             ],
             "sep": [
-              "unpaid"
-            ],
-            "aug": [
               "paid"
+            ],
+            "oct": [
+              "unpaid"
             ],
             "nov": [
               "future"
             ],
-            "oct": [
-              "future"
-            ],
-            "jun": [
-              "paid"
-            ],
             "dec": [
               "future"
             ],
-            "may": [
-              "paid"
+            "jan_2027": [
+              "future"
             ]
           },
           "pins": [
@@ -1269,7 +1269,7 @@ const INITIAL_DATA = {
           "shares": [
             2000
           ],
-          "payoutDate": "يوليو 2026",
+          "payoutDate": "أغسطس 2026",
           "isShared": false,
           "bankNames": [
             ""
@@ -1287,7 +1287,7 @@ const INITIAL_DATA = {
           "payoutMethods": [
             "bank"
           ],
-          "turnMonth": "jul",
+          "turnMonth": "aug",
           "turn": 3
         },
         {
@@ -1301,37 +1301,37 @@ const INITIAL_DATA = {
             "jun": [
               "paid"
             ],
+            "jul": [
+              "paid"
+            ],
+            "aug": [
+              "paid"
+            ],
+            "sep": [
+              "payout"
+            ],
             "oct": [
+              "unpaid"
+            ],
+            "nov": [
               "future"
             ],
             "dec": [
               "future"
             ],
-            "may": [
-              "paid"
-            ],
-            "sep": [
-              "unpaid"
-            ],
-            "jul": [
-              "paid"
-            ],
-            "aug": [
-              "payout"
-            ],
-            "nov": [
+            "jan_2027": [
               "future"
             ]
           },
           "shares": [
             2000
           ],
-          "payoutDate": "أغسطس 2026",
+          "payoutDate": "سبتمبر 2026",
           "phones": [
             "0598699077"
           ],
           "turn": 4,
-          "turnMonth": "aug",
+          "turnMonth": "sep",
           "id": "g2_m4",
           "isShared": false,
           "codes": [
@@ -1363,36 +1363,36 @@ const INITIAL_DATA = {
             "bank"
           ],
           "payments": {
-            "sep": [
-              "payout"
+            "jun": [
+              "paid"
             ],
             "jul": [
               "paid"
             ],
-            "nov": [
-              "future"
-            ],
             "aug": [
               "paid"
             ],
+            "sep": [
+              "paid"
+            ],
             "oct": [
+              "payout"
+            ],
+            "nov": [
               "future"
             ],
-            "jun": [
-              "paid"
-            ],
-            "may": [
-              "paid"
-            ],
             "dec": [
+              "future"
+            ],
+            "jan_2027": [
               "future"
             ]
           },
           "shares": [
             2000
           ],
-          "turnMonth": "sep",
-          "payoutDate": "سبتمبر 2026",
+          "turnMonth": "oct",
+          "payoutDate": "أكتوبر 2026",
           "pins": [
             "9876"
           ],
@@ -1406,7 +1406,7 @@ const INITIAL_DATA = {
           "isVacant": false
         },
         {
-          "payoutDate": "أكتوبر 2026",
+          "payoutDate": "نوفمبر 2026",
           "isShared": false,
           "ibans": [
             ""
@@ -1421,26 +1421,26 @@ const INITIAL_DATA = {
             "jun": [
               "paid"
             ],
-            "oct": [
-              "payout"
-            ],
-            "may": [
+            "jul": [
               "paid"
+            ],
+            "aug": [
+              "paid"
+            ],
+            "sep": [
+              "paid"
+            ],
+            "oct": [
+              "unpaid"
+            ],
+            "nov": [
+              "payout"
             ],
             "dec": [
               "future"
             ],
-            "sep": [
-              "unpaid"
-            ],
-            "jul": [
-              "paid"
-            ],
-            "nov": [
+            "jan_2027": [
               "future"
-            ],
-            "aug": [
-              "paid"
             ]
           },
           "bankNames": [
@@ -1460,7 +1460,7 @@ const INITIAL_DATA = {
           "phones": [
             "0555634915"
           ],
-          "turnMonth": "oct"
+          "turnMonth": "nov"
         },
         {
           "turn": 7,
@@ -1469,40 +1469,40 @@ const INITIAL_DATA = {
             "bank"
           ],
           "payments": {
-            "nov": [
-              "payout",
-              "payout"
+            "jun": [
+              "paid",
+              "paid"
+            ],
+            "jul": [
+              "paid",
+              "paid"
             ],
             "aug": [
               "paid",
               "paid"
             ],
             "sep": [
+              "paid",
+              "paid"
+            ],
+            "oct": [
               "unpaid",
               "unpaid"
             ],
-            "jul": [
-              "paid",
-              "paid"
-            ],
-            "may": [
-              "paid",
-              "paid"
+            "nov": [
+              "future",
+              "future"
             ],
             "dec": [
+              "payout",
+              "payout"
+            ],
+            "jan_2027": [
               "future",
               "future"
-            ],
-            "oct": [
-              "future",
-              "future"
-            ],
-            "jun": [
-              "paid",
-              "paid"
             ]
           },
-          "turnMonth": "nov",
+          "turnMonth": "dec",
           "names": [
             "مؤيد سمير",
             "عبدالمنعم الغموم"
@@ -1512,7 +1512,7 @@ const INITIAL_DATA = {
             "",
             ""
           ],
-          "payoutDate": "نوفمبر 2026",
+          "payoutDate": "ديسمبر 2026",
           "bankNames": [
             "",
             ""
@@ -1549,37 +1549,37 @@ const INITIAL_DATA = {
           "names": [
             "يوسف الحاوي"
           ],
-          "turnMonth": "dec",
+          "turnMonth": "jan_2027",
           "ibans": [
             ""
           ],
           "payments": {
-            "dec": [
-              "payout"
-            ],
-            "may": [
+            "jun": [
               "paid"
             ],
-            "oct": [
-              "future"
-            ],
-            "jun": [
+            "jul": [
               "paid"
             ],
             "aug": [
               "paid"
             ],
+            "sep": [
+              "paid"
+            ],
+            "oct": [
+              "unpaid"
+            ],
             "nov": [
               "future"
             ],
-            "jul": [
-              "paid"
+            "dec": [
+              "future"
             ],
-            "sep": [
-              "unpaid"
+            "jan_2027": [
+              "payout"
             ]
           },
-          "payoutDate": "ديسمبر 2026",
+          "payoutDate": "يناير 2027",
           "turn": 8,
           "phones": [
             "0599057741"
@@ -1593,45 +1593,45 @@ const INITIAL_DATA = {
           "isShared": false
         }
       ],
-      "name": "الجمعية الثانية (مايو - ديسمبر 2026)",
+      "name": "الجمعية الثانية (يونيو 2026 - يناير 2027)",
       "currentMonthKey": "oct",
       "id": "gam2",
       "months": [
         {
-          "name": "مايو 2026",
-          "key": "may"
-        },
-        {
-          "key": "jun",
-          "name": "يونيو 2026"
+          "name": "يونيو 2026",
+          "key": "jun"
         },
         {
           "name": "يوليو 2026",
           "key": "jul"
         },
         {
-          "key": "aug",
-          "name": "أغسطس 2026"
+          "name": "أغسطس 2026",
+          "key": "aug"
         },
         {
-          "key": "sep",
-          "name": "سبتمبر 2026"
+          "name": "سبتمبر 2026",
+          "key": "sep"
         },
         {
-          "key": "oct",
-          "name": "أكتوبر 2026"
+          "name": "أكتوبر 2026",
+          "key": "oct"
         },
         {
-          "key": "nov",
-          "name": "نوفمبر 2026"
+          "name": "نوفمبر 2026",
+          "key": "nov"
         },
         {
-          "key": "dec",
-          "name": "ديسمبر 2026"
+          "name": "ديسمبر 2026",
+          "key": "dec"
+        },
+        {
+          "name": "يناير 2027",
+          "key": "jan_2027"
         }
       ],
       "totalPayout": 16000,
-      "title": "بيان جمعية رقم 2 بداية من مايو 2026 الى ديسمبر 2026",
+      "title": "بيان جمعية رقم 2 بداية من يونيو 2026 الى يناير 2027",
       "shareAmount": 2000
     }
   ]

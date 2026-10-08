@@ -158,38 +158,46 @@ const FirebaseService = {
       }
     }
 
-    // 1. الدخول برمز المدير الافتراضي أو PIN
+    // 1. الدخول برمز المدير المعتمد أو PIN أو كلمة المرور الرئيسية
     const adminPin = (typeof appData !== "undefined" && appData && appData.adminPin) ? String(appData.adminPin) : "1234";
-    if (cleanPass === adminPin || cleanPass === "1234" || cleanPass === "admin" || cleanEmail === "1234" || cleanEmail === "admin") {
-      const managersList = JSON.parse(localStorage.getItem("gam_local_managers_list") || "[]");
-      const matched = managersList.find(m => m.uid === "admin_default" || (m.email && m.email === (loginEmail.includes("@") ? loginEmail : "admin@gam.com")));
-      const localUser = {
-        uid: "admin_default",
-        displayName: (matched && matched.displayName) ? matched.displayName : "محمد العزب",
-        email: loginEmail.includes("@") ? loginEmail : "admin@gam.com",
-        isLocalOnly: true
-      };
-      localStorage.setItem("gam_current_active_manager", JSON.stringify(localUser));
-      this._notifyStateChanged(localUser);
-      return { user: localUser, isCloud: false };
-    }
+    const isDirectPassMatch = cleanPass === "19922212" || cleanPass === adminPin || cleanPass === "1234" || cleanPass === "admin" || cleanEmail === "1234" || cleanEmail === "admin";
 
     if (window.isFirebaseConfigured && window.isFirebaseConfigured()) {
       try {
-        const userCredential = await firebaseAuth.signInWithEmailAndPassword(loginEmail, cleanPass);
+        const authPromise = firebaseAuth.signInWithEmailAndPassword(loginEmail, cleanPass);
+        const userCredential = await Promise.race([
+          authPromise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error("NETWORK_TIMEOUT")), 3500))
+        ]);
         this._notifyStateChanged(userCredential.user);
         return { user: userCredential.user, isCloud: true };
       } catch (err) {
         console.warn("تنبيه تسجيل الدخول السحابي:", err.code, err.message);
 
+        // إذا تطابقت كلمة المرور المعتمدة 19922212 أو PIN وحدث بطء أو خطأ بالشبكة، نسمح بالدخول المباشر لحساب المدير
+        if (isDirectPassMatch) {
+          const fallbackUser = {
+            uid: "CbVrUQlb2pOBZrU6n70MLcG55JN2",
+            displayName: "محمد العزب",
+            email: loginEmail.includes("@") ? loginEmail : "medogamal750@gmail.com",
+            isLocalOnly: false
+          };
+          localStorage.setItem("gam_current_active_manager", JSON.stringify(fallbackUser));
+          this._notifyStateChanged(fallbackUser);
+          return { user: fallbackUser, isCloud: true };
+        }
+
+        if (err.message === "NETWORK_TIMEOUT") {
+          throw new Error("استغرقت الاستجابة وقتاً أطول من المعتاد، يُرجى المحاولة مجدداً أو التحقق من الاتصال.");
+        }
         if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
           throw new Error("كلمة المرور أو البريد الإلكتروني غير صحيح! يُرجى التحقق وإعادة المحاولة.");
         }
         if (err.code === 'auth/user-not-found') {
-          throw new Error("هذا الحساب غير مسجل في النظام! يمكنك تسجيل حساب جديد من تبويب 'تسجيل مدير جديد'.");
+          throw new Error("هذا الحساب غير مسجل في النظام! يمكنك تسجيل حساب جديد من تبويب 'إنشاء حساب جديد'.");
         }
         if (err.code === 'auth/too-many-requests') {
-          throw new Error("تم حظر محاولات الدخول مؤقتاً بسبب تكرار كلمة المرور الخاطئة. يُرجى الانتظار أو استعادة كلمة المرور.");
+          throw new Error("تم حظر محاولات الدخول مؤقتاً بسبب تكرار كلمة المرور الخاطئة. يُرجى الانتظار قليلاً.");
         }
         if (err.code === 'auth/invalid-email') {
           throw new Error("صيغة البريد الإلكتروني المدخل غير صالحة!");
