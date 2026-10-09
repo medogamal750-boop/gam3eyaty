@@ -1162,7 +1162,6 @@ function renderMatrixTable() {
   let headHtml = `
     <th class="col-index">الدور</th>
     <th class="col-name" style="text-align: right;">اسم المشترك</th>
-    <th class="col-date">التسليم</th>
     <th class="col-share">السهم</th>
   `;
 
@@ -1209,34 +1208,56 @@ function renderMatrixTable() {
     } else if (member.isShared) {
       const p1Enc = encodeURIComponent(member.names[0] || "");
       const p2Enc = encodeURIComponent(member.names[1] || "");
+      const totalSlotShare = (member.shares && member.shares.length)
+        ? member.shares.reduce((a, b) => a + b, 0)
+        : gam.shareAmount;
+      const s1 = (member.shares && member.shares[0]) || (totalSlotShare / 2);
+      const s2 = (member.shares && member.shares[1]) || (totalSlotShare - s1);
+      const p1Pct = Math.round((s1 / totalSlotShare) * 100);
+      const p2Pct = Math.round((s2 / totalSlotShare) * 100);
+
       nameHtml = `
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.35rem;">
-          <div style="font-weight: 700; color: var(--text-dark);">${member.names[0]} <span style="font-size: 0.74rem; color: #94a3b8; font-weight: 600;">(${(member.shares[0] || (gam.shareAmount / 2)).toLocaleString()} ${getSarSymbolSvg()})</span></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.4rem;">
+          <div style="display: flex; align-items: center; gap: 0.35rem; font-weight: 800; font-size: 0.88rem; color: var(--text-dark);">
+            <span>${member.names[0]}</span>
+            <span class="share-pct-pill" title="نسبة السهم: ${p1Pct}%">${p1Pct}%</span>
+          </div>
           <button type="button" class="btn-statement-mini" onclick="openDirectMemberStatement('${p1Enc}')" title="عرض كشف حساب ${member.names[0]}">${miniDocSvg}</button>
         </div>
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.35rem; margin-top: 3px;">
-          <div style="font-weight: 700; color: var(--text-dark);">${member.names[1]} <span style="font-size: 0.74rem; color: #94a3b8; font-weight: 600;">(${(member.shares[1] || (gam.shareAmount / 2)).toLocaleString()} ${getSarSymbolSvg()})</span></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; margin-top: 5px;">
+          <div style="display: flex; align-items: center; gap: 0.35rem; font-weight: 800; font-size: 0.88rem; color: var(--text-dark);">
+            <span>${member.names[1]}</span>
+            <span class="share-pct-pill" title="نسبة السهم: ${p2Pct}%">${p2Pct}%</span>
+          </div>
           <button type="button" class="btn-statement-mini" onclick="openDirectMemberStatement('${p2Enc}')" title="عرض كشف حساب ${member.names[1]}">${miniDocSvg}</button>
         </div>
-        <span class="co-member-badge">شريكان بالسهم</span>
+        <div class="co-member-badge-wrap">
+          <span class="co-member-badge" title="هذا الدور مشترك بنسبة ${p1Pct}% و ${p2Pct}%">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" class="co-badge-icon" aria-hidden="true">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            <span>شريكان بالسهم</span>
+          </span>
+        </div>
       `;
     } else {
       const pEnc = encodeURIComponent(member.names[0] || "");
       nameHtml = `
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.4rem;">
-          <div><strong>${member.names[0]}</strong></div>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.45rem;">
+          <div style="font-weight: 800; font-size: 0.96rem; color: var(--text-dark);">${member.names[0]}</div>
           <button type="button" class="btn-statement-mini" onclick="openDirectMemberStatement('${pEnc}')" title="عرض كشف حساب ${member.names[0]}">${miniDocSvg}</button>
         </div>
       `;
     }
 
-    const payoutMonthName = gam.months[index] ? gam.months[index].name : (member.payoutDate || '-');
     const totalShares = member.isVacant ? gam.shareAmount : member.shares.reduce((a, b) => a + b, 0);
 
     let rowHtml = `
       <td class="col-index"><strong>${index + 1}</strong></td>
       <td class="cell-member-name">${nameHtml}</td>
-      <td class="col-date"><strong>${payoutMonthName}</strong></td>
       <td class="col-share"><strong>${totalShares.toLocaleString()} ${getSarSymbolSvg()}</strong></td>
     `;
 
@@ -1301,7 +1322,7 @@ function renderMatrixTable() {
   if (renderedCount === 0) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td colspan="${4 + gam.months.length}" style="text-align: center; padding: 2.75rem 1rem; color: #94a3b8; font-weight: 700; background: rgba(11, 23, 42, 0.4);">
+      <td colspan="${3 + gam.months.length}" style="text-align: center; padding: 2.75rem 1rem; color: #94a3b8; font-weight: 700; background: rgba(11, 23, 42, 0.4);">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 0.5rem auto; display: block;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         <div style="font-size: 1rem; color: #f8fafc; margin-bottom: 0.25rem;">لا يوجد مشتركون مطابقون لهذا الفلتر</div>
         <div style="font-size: 0.82rem; color: #64748b; margin-bottom: 0.95rem;">جرّب اختيار تصنيف آخر أو إلغاء التصفية لعرض جميع المشتركين</div>
@@ -1331,35 +1352,14 @@ function renderMatrixTable() {
     footerTitleColor = "#059669";
   }
 
-  // حساب إجمالي الأسهم للمشتركين المعروضين
-  let totalDisplayedShares = 0;
-  if (filter === "all") {
-    gam.members.forEach(m => {
-      if (!m.isVacant) {
-        const s = m.shares || [gam.shareAmount];
-        totalDisplayedShares += s.reduce((a, b) => a + b, 0);
-      }
-    });
-  } else {
-    displayedMembers.forEach(({ member }) => {
-      if (!member.isVacant) {
-        const s = member.shares || [gam.shareAmount];
-        totalDisplayedShares += s.reduce((a, b) => a + b, 0);
-      }
-    });
-  }
-
   let footHtml = `
     <tr class="matrix-foot-row ${isUnpaidFilter ? 'foot-unpaid-mode' : 'foot-paid-mode'}">
       <td class="col-index"></td>
-      <td class="cell-member-name" style="text-align: right; font-weight: 800; font-size: 0.82rem; color: ${footerTitleColor};">
-        ${footerTitle}
-      </td>
-      <td class="col-date" style="font-size: 0.74rem; font-weight: 700;">
-        ${filter !== 'all' ? `(${renderedCount} مشترك)` : ''}
-      </td>
-      <td class="col-share" style="font-weight: 800; font-size: 0.82rem;">
-        ${totalDisplayedShares.toLocaleString()} ${getSarSymbolSvg()}
+      <td class="cell-member-name matrix-foot-title" colspan="2" style="color: ${footerTitleColor};">
+        <div class="matrix-foot-title-wrap">
+          <span class="foot-title-text">${footerTitle}</span>
+          ${filter !== 'all' ? `<span class="foot-filter-pill">(${renderedCount} مشترك)</span>` : ''}
+        </div>
       </td>
   `;
 
@@ -2014,21 +2014,33 @@ function renderMemberPortfolio() {
 
   if (monthVal) {
     if (curMonthDueAmount > 0) {
-      monthVal.innerHTML = `<span style="color: #f43f5e; font-weight: 800;">متأخر: ${formatCurrency(curMonthDueAmount)}</span>`;
+      monthVal.innerHTML = `<span style="color: #f43f5e; font-weight: 900;">مطلوب سداد: ${formatCurrency(curMonthDueAmount)}</span>`;
       if (monthCard) monthCard.className = "stat-card rose";
-      if (monthIcon) { monthIcon.className = "stat-icon rose"; monthIcon.textContent = ""; }
+      if (monthIcon) {
+        monthIcon.className = "stat-icon-badge rose";
+        monthIcon.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><circle cx="18" cy="4" r="3" fill="#f43f5e" stroke="none"/></svg>`;
+      }
     } else if (curMonthPayoutCount > 0) {
-      monthVal.innerHTML = `<span style="color: #10b981; font-weight: 800;">شهر الاستحقاق (+${formatCurrency(curMonthPayoutTotal)})</span>`;
-      if (monthCard) monthCard.className = "stat-card emerald";
-      if (monthIcon) { monthIcon.className = "stat-icon green"; monthIcon.textContent = ""; }
+      monthVal.innerHTML = `<span style="color: #f59e0b; font-weight: 900;">شهر الاستحقاق (+${formatCurrency(curMonthPayoutTotal)})</span>`;
+      if (monthCard) monthCard.className = "stat-card gold";
+      if (monthIcon) {
+        monthIcon.className = "stat-icon-badge gold";
+        monthIcon.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16 10-4 4-4-4"/><path d="M12 6v8"/><path d="M7 17h10"/></svg>`;
+      }
     } else if (curMonthPaidCount > 0) {
-      monthVal.innerHTML = `<span style="color: #10b981; font-weight: 800;">مسدد بالكامل</span>`;
+      monthVal.innerHTML = `<span style="color: #10b981; font-weight: 900;">مسدد بالكامل ✅</span>`;
       if (monthCard) monthCard.className = "stat-card emerald";
-      if (monthIcon) { monthIcon.className = "stat-icon green"; monthIcon.textContent = ""; }
+      if (monthIcon) {
+        monthIcon.className = "stat-icon-badge emerald";
+        monthIcon.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>`;
+      }
     } else {
-      monthVal.innerHTML = `<span style="color: #38bdf8; font-weight: 800;">لا توجد مطالبات</span>`;
+      monthVal.innerHTML = `<span style="color: #38bdf8; font-weight: 900;">لا توجد مطالبات</span>`;
       if (monthCard) monthCard.className = "stat-card blue";
-      if (monthIcon) { monthIcon.className = "stat-icon blue"; monthIcon.textContent = ""; }
+      if (monthIcon) {
+        monthIcon.className = "stat-icon-badge blue";
+        monthIcon.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
+      }
     }
   }
 
@@ -2699,7 +2711,7 @@ function renderReorderTable() {
       const totalShare = m.shares.reduce((a, b) => a + b, 0);
       memberDisplay = `
         <strong>${names}</strong>
-        ${m.isShared ? '<span class="co-member-badge">شريكان</span>' : ''}
+        ${m.isShared ? '<span class="co-member-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" class="co-badge-icon"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>شريكان بالسهم</span></span>' : ''}
       `;
       shareDisplay = `<strong>${totalShare.toLocaleString()}</strong>`;
     }
