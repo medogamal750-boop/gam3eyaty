@@ -36,8 +36,19 @@ const FirebaseService = {
     this._listeners.push(callback);
 
     if (window.isFirebaseConfigured && window.isFirebaseConfigured() && typeof firebaseAuth !== "undefined") {
-      firebaseAuth.onAuthStateChanged((user) => {
+      firebaseAuth.onAuthStateChanged(async (user) => {
         if (user) {
+          // التحقق من تفعيل البريد الإلكتروني (يستثنى حساب الأدمن الرئيسي)
+          const isMasterAdmin = (user.email && user.email.toLowerCase() === "medogamal750@gmail.com") || user.uid === "CbVrUQlb2pOBZrU6n70MLcG55JN2";
+          if (!user.emailVerified && !isMasterAdmin && !user.isLocalOnly) {
+            console.warn("جلسة مستخدم غير مفعل بريده الإلكتروني، جاري تسجيل الخروج التلقائي...");
+            try {
+              await firebaseAuth.signOut();
+            } catch (soErr) {}
+            localStorage.removeItem("gam_current_active_manager");
+            this._notifyStateChanged(null);
+            return;
+          }
           this._notifyStateChanged(user);
         } else {
           // إذا لم يكن هناك مستخدم سحابي، نتحقق من وجود جلسة مدير محلية محفوظة حتى لا يُسجل خروج تلقائياً عند التحديث
@@ -68,7 +79,9 @@ const FirebaseService = {
         const user = userCredential.user;
 
         if (displayName) {
-          await user.updateProfile({ displayName: displayName });
+          try {
+            await user.updateProfile({ displayName: displayName });
+          } catch (pErr) {}
         }
 
         // إرسال رابط تأكيد وتفعيل البريد الإلكتروني رسمياً عبر Firebase
@@ -80,24 +93,38 @@ const FirebaseService = {
           console.warn("تعذر إرسال رابط تأكيد البريد:", vErr);
         }
 
-        // إنشاء وثيقة المدير في Firestore مع بيانات أولية فارغة
+        // إنشاء وثيقة المدير في Firestore مع بيانات أولية فارغة تماماً ومستقلة (0 جمعيات)
         const initialCloudData = {
           managerInfo: {
             uid: user.uid,
             displayName: displayName || "مدير جمعيات",
             email: email,
             phone: phone || "",
-            emailVerified: user.emailVerified || false,
+            emailVerified: false,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           },
           currency: "ر.س",
           adminPin: "1234",
           gam3eyat: [],
-          registeredMembers: []
+          registeredMembers: [],
+          dataVersion: "2026.10.08_v4.0",
+          isNewManager: true
         };
 
         await firebaseDb.collection("managers").doc(user.uid).collection("data").doc("current").set(initialCloudData);
-        this._notifyStateChanged(user);
+        
+        // حفظ نسخة محلية فارغة خاصة بهذا المدير
+        try {
+          localStorage.setItem(`gam_data_mgr_${user.uid}`, JSON.stringify(initialCloudData));
+        } catch (e) {}
+
+        // تسجيل الخروج الفوري الإلزامي لعدم السماح بالدخول قبل تأكيد رابط البريد الإلكتروني
+        try {
+          await firebaseAuth.signOut();
+        } catch (soErr) {}
+        localStorage.removeItem("gam_current_active_manager");
+        this._notifyStateChanged(null);
+
         return { user, isCloud: true, emailVerificationSent };
       } catch (authErr) {
         console.error("خطأ إنشاء الحساب السحابي في Firebase:", authErr);
@@ -167,9 +194,30 @@ const FirebaseService = {
         const authPromise = firebaseAuth.signInWithEmailAndPassword(loginEmail, cleanPass);
         const userCredential = await Promise.race([
           authPromise,
-          new Promise((_, reject) => setTimeout(() => reject(new Error("NETWORK_TIMEOUT")), 3500))
+          new Promise((_, reject) => setTimeout(() => reject(new Error("NETWORK_TIMEOUT")), 4000))
         ]);
-        this._notifyStateChanged(userCredential.user);
+        const user = userCredential.user;
+
+        // تحديث بيانات المستخدم للتحقق من أحدث حالة لتأكيد البريد
+        try {
+          await user.reload();
+        } catch (rErr) {}
+
+        // التحقق الإلزامي من تفعيل البريد الإلكتروني قبل السماح بالدخول
+        const isMasterAdmin = (user.email && user.email.toLowerCase() === "medogamal750@gmail.com") || user.uid === "CbVrUQlb2pOBZrU6n70MLcG55JN2";
+        if (!user.emailVerified && !isMasterAdmin) {
+          try {
+            await firebaseAuth.signOut();
+          } catch (soErr) {}
+          localStorage.removeItem("gam_current_active_manager");
+          this._notifyStateChanged(null);
+
+          const notVerifiedErr = new Error("EMAIL_NOT_VERIFIED");
+          notVerifiedErr.userEmail = user.email;
+          throw notVerifiedErr;
+        }
+
+        this._notifyStateChanged(user);
         return { user: userCredential.user, isCloud: true };
       } catch (err) {
         console.warn("تنبيه تسجيل الدخول السحابي:", err.code, err.message);
@@ -187,6 +235,9 @@ const FirebaseService = {
           return { user: fallbackUser, isCloud: true };
         }
 
+        if (err.message === "EMAIL_NOT_VERIFIED") {
+          throw err;
+        }
         if (err.message === "NETWORK_TIMEOUT") {
           throw new Error("استغرقت الاستجابة وقتاً أطول من المعتاد، يُرجى المحاولة مجدداً أو التحقق من الاتصال.");
         }
@@ -319,7 +370,7 @@ const FirebaseService = {
     this._notifyStateChanged(null);
   },
 
-  // جلب بيانات جمعيات المدير
+  // جلب بيانات جمعيات المدير من السحابة مع حماية موثوقة
   async getManagerData(uid) {
     if (!uid) return null;
 
@@ -328,10 +379,16 @@ const FirebaseService = {
         const fetchPromise = firebaseDb.collection("managers").doc(uid).collection("data").doc("current").get();
         const docSnap = await Promise.race([
           fetchPromise,
-          new Promise(r => setTimeout(() => r(null), 2000))
+          new Promise(r => setTimeout(() => r(null), 12000))
         ]);
         if (docSnap && docSnap.exists) {
-          return docSnap.data();
+          const cloudData = docSnap.data();
+          if (cloudData && Array.isArray(cloudData.gam3eyat) && cloudData.gam3eyat.length > 0) {
+            try {
+              localStorage.setItem(`gam_data_mgr_${uid}`, JSON.stringify(cloudData));
+            } catch(e) {}
+            return cloudData;
+          }
         }
       } catch (err) {
         console.warn("تنبيه في جلب بيانات المدير من Firestore:", err);
@@ -341,6 +398,22 @@ const FirebaseService = {
     return saved ? JSON.parse(saved) : null;
   },
 
+  // إعادة إرسال رابط تأكيد البريد الإلكتروني
+  async resendVerificationEmail(email, password) {
+    if (window.isFirebaseConfigured && window.isFirebaseConfigured() && typeof firebaseAuth !== "undefined") {
+      try {
+        const cred = await firebaseAuth.signInWithEmailAndPassword((email || "").trim().toLowerCase(), (password || "").trim());
+        await cred.user.sendEmailVerification();
+        await firebaseAuth.signOut();
+        return true;
+      } catch (err) {
+        console.warn("خطأ إعادة إرسال رابط التفعيل:", err);
+        throw err;
+      }
+    }
+    return false;
+  },
+
   // حفظ بيانات المدير في السحابة
   async saveManagerData(uid, appDataToSave) {
     if (!uid) return false;
@@ -348,7 +421,7 @@ const FirebaseService = {
     // تنظيف البيانات والتأكد من عدم وجود دوال أو عناصر غير صالحة للتخزين
     const cleanData = JSON.parse(JSON.stringify(appDataToSave));
 
-    // الحفظ المحلي الفوري دائماً لضمان عدم فقدان أي تعديل حتى لو انقطع الاتصال
+    // الحفظ المحلي الفوري دائماً لكل مدير في مفتاحه المستقل
     try {
       localStorage.setItem(`gam_data_mgr_${uid}`, JSON.stringify(cleanData));
     } catch (e) {
@@ -358,13 +431,20 @@ const FirebaseService = {
     if (window.isFirebaseConfigured && window.isFirebaseConfigured()) {
       try {
         cleanData.lastUpdated = firebase.firestore.FieldValue.serverTimestamp();
-        const writePromise = Promise.all([
-          firebaseDb.collection("managers").doc(uid).collection("data").doc("current").set(cleanData, { merge: true }),
-          firebaseDb.collection("public_data").doc("active_statement").set(cleanData, { merge: true })
-        ]);
+        
+        const writes = [
+          firebaseDb.collection("managers").doc(uid).collection("data").doc("current").set(cleanData, { merge: true })
+        ];
+
+        // عزل تام للبيانات: فقط حساب الأدمن الرئيسي هو من يُحدث السحابة العامة المشتركة active_statement
+        const isMaster = uid === "CbVrUQlb2pOBZrU6n70MLcG55JN2" || uid === "admin_default" || (cleanData.managerInfo && cleanData.managerInfo.email === "medogamal750@gmail.com");
+        if (isMaster) {
+          writes.push(firebaseDb.collection("public_data").doc("active_statement").set(cleanData, { merge: true }));
+        }
+
         await Promise.race([
-          writePromise,
-          new Promise(r => setTimeout(r, 2000))
+          Promise.all(writes),
+          new Promise(r => setTimeout(r, 12000))
         ]);
         return true;
       } catch (err) {
@@ -383,8 +463,14 @@ const FirebaseService = {
 
     if (window.isFirebaseConfigured && window.isFirebaseConfigured()) {
       cleanData.migratedAt = firebase.firestore.FieldValue.serverTimestamp();
-      await firebaseDb.collection("managers").doc(uid).collection("data").doc("current").set(cleanData, { merge: true });
-      await firebaseDb.collection("public_data").doc("active_statement").set(cleanData, { merge: true });
+      const writes = [
+        firebaseDb.collection("managers").doc(uid).collection("data").doc("current").set(cleanData, { merge: true })
+      ];
+      const isMaster = uid === "CbVrUQlb2pOBZrU6n70MLcG55JN2" || (cleanData.managerInfo && cleanData.managerInfo.email === "medogamal750@gmail.com");
+      if (isMaster) {
+        writes.push(firebaseDb.collection("public_data").doc("active_statement").set(cleanData, { merge: true }));
+      }
+      await Promise.all(writes);
       return true;
     } else {
       localStorage.setItem(`gam_data_mgr_${uid}`, JSON.stringify(cleanData));

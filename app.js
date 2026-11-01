@@ -289,7 +289,50 @@ function syncMonthPaymentStatuses(gam, monthKey) {
 }
 
 /**
- * مزامنة كافة الجمعيات في النظام تلقائياً مع الشهر الجاري بالتقويم
+ * توحيد ومزامنة كافة الجمعيات في النظام عند قيام المدير بتغيير الشهر في فلتر الشهور
+ * يضمن تطبيق الشهر المختار على جميع الجمعيات (الجمعية الأولى، الجمعية الثانية، إلخ) بالتساوي
+ * بحيث لا تظهر أي جمعية في حالة متأخر لشهر لم يأتِ بعد أو لم يحدده المدير
+ */
+function syncAllGam3eyatToSelectedMonth(selectedMonthKey, sourceGam) {
+  if (!appData || !Array.isArray(appData.gam3eyat) || appData.gam3eyat.length === 0) return;
+  const currentGam = sourceGam || getCurrentGam() || appData.gam3eyat[0];
+  const selectedMonthObj = currentGam && currentGam.months ? currentGam.months.find(m => m.key === selectedMonthKey) : null;
+  
+  // استخراج بادئة الشهر واسمه التأسيسي (مثل: oct / أكتوبر)
+  const baseKey = (selectedMonthKey || "").split("_")[0].toLowerCase();
+  const selectedMonthName = selectedMonthObj ? (selectedMonthObj.name || "") : "";
+  const yearMatch = selectedMonthName.match(/\d{4}/);
+  const targetYear = yearMatch ? yearMatch[0] : "2026";
+
+  appData.gam3eyat.forEach(gam => {
+    if (!gam.months || gam.months.length === 0) return;
+    
+    // البحث عن الشهر المقابل في هذه الجمعية بدقة
+    let matchedMonth = gam.months.find(m => m.key === selectedMonthKey);
+    if (!matchedMonth) {
+      matchedMonth = gam.months.find(m => {
+        const k = (m.key || "").toLowerCase();
+        const n = m.name || "";
+        if (k.split("_")[0] === baseKey && (n.includes(targetYear) || !n.match(/\d{4}/))) return true;
+        if (selectedMonthName && n.includes(selectedMonthName.split(" ")[0])) return true;
+        return false;
+      });
+    }
+
+    if (matchedMonth) {
+      syncMonthPaymentStatuses(gam, matchedMonth.key);
+    } else {
+      // إذا كانت الجمعية لا تحتوي على هذا الشهر (مثلاً جمعية انتهت أو لم تبدأ بعد):
+      syncMonthPaymentStatuses(gam, gam.currentMonthKey || gam.months[0].key);
+    }
+  });
+
+  appState.currentMonthKey = selectedMonthKey;
+}
+window.syncAllGam3eyatToSelectedMonth = syncAllGam3eyatToSelectedMonth;
+
+/**
+ * مزامنة كافة الجمعيات في النظام تلقائياً مع الحفاظ على الشهر الذي حدده المدير
  * بمجرد حلول الشهر الجديد تصبح الحالات "متأخر" تلقائياً ما لم يحدد المدير خلاف ذلك
  */
 function syncAllGam3eyatPaymentStatuses(data) {
@@ -298,13 +341,13 @@ function syncAllGam3eyatPaymentStatuses(data) {
 
   data.gam3eyat.forEach(gam => {
     if (!gam.months || gam.months.length === 0) return;
+    // إذا كان للجمعية شهر حالي محدد بالفعل، نلتزم به ونحافظ عليه
+    if (gam.currentMonthKey && gam.months.some(m => m.key === gam.currentMonthKey)) {
+      syncMonthPaymentStatuses(gam, gam.currentMonthKey);
+      return;
+    }
     const smartMonth = getSmartCurrentMonthKey(gam);
-    const smartMonthIdx = gam.months.findIndex(m => m.key === smartMonth);
-    const savedIdx = gam.currentMonthKey ? gam.months.findIndex(m => m.key === gam.currentMonthKey) : -1;
-
-    // إذا تقدم التقويم الزمني إلى شهر جديد وكان متقدماً على الشهر المحفوظ، نعتمد الشهر الجديد
-    const targetMonthKey = (savedIdx < smartMonthIdx || savedIdx === -1) ? smartMonth : gam.currentMonthKey;
-    syncMonthPaymentStatuses(gam, targetMonthKey);
+    syncMonthPaymentStatuses(gam, smartMonth);
     modified = true;
   });
 
@@ -347,7 +390,37 @@ function generateRandomPin() {
 // 1. التخزين المحلي (LocalStorage)
 // ==========================================
 
-function loadData() {
+function loadData(targetUid) {
+  const activeUid = targetUid || (appState.currentManager && appState.currentManager.uid);
+  const activeEmail = (appState.currentManager && appState.currentManager.email) ? appState.currentManager.email.toLowerCase() : "";
+  const isMaster = !activeUid || activeUid === "CbVrUQlb2pOBZrU6n70MLcG55JN2" || activeUid === "admin_default" || activeEmail === "medogamal750@gmail.com";
+
+  // للمدير المسجل غير الرئيسي: نقرأ حصراً من مفتاحه المحلي المستقل ولا نعرض بيانات الأدمن أبداً
+  if (activeUid && !isMaster) {
+    const mgrSaved = localStorage.getItem(`gam_data_mgr_${activeUid}`);
+    if (mgrSaved) {
+      try {
+        const mgrParsed = JSON.parse(mgrSaved);
+        if (mgrParsed && Array.isArray(mgrParsed.gam3eyat)) {
+          // تنظيف تلقائي لأي جمعيات أدمن قديمة منسوخة بالخطأ
+          if (mgrParsed.gam3eyat.some(g => g.id === "gam1" || g.id === "gam2" || g.id === "gam_winter_2026")) {
+            mgrParsed.gam3eyat = [];
+            mgrParsed.registeredMembers = [];
+            try { localStorage.setItem(`gam_data_mgr_${activeUid}`, JSON.stringify(mgrParsed)); } catch(e) {}
+          }
+          return mgrParsed;
+        }
+      } catch(e) {}
+    }
+    return {
+      adminPin: "1234",
+      currency: "ر.س",
+      gam3eyat: [],
+      registeredMembers: [],
+      dataVersion: "2026.10.08_v4.0"
+    };
+  }
+
   let data = null;
 
   // تنظيف المفاتيح السابقة القديمة لضمان عدم بقاء أي بيانات غير محدثة
@@ -365,7 +438,7 @@ function loadData() {
     }
   }
 
-  // فحص ذكي للترقية التلقائية: إذا كانت البيانات غير موجودة أو قديمة أو تفتقر للمشتركين الـ 19 المعتمدين
+  // فحص ذكي للترقية التلقائية: إذا كانت البيانات غير موجودة أو قديمة أو تفتقر للمشتركين الـ 19 المعتمدين (خاص بالأدمن الرئيسي)
   const targetVersion = (typeof INITIAL_DATA !== "undefined" && INITIAL_DATA.dataVersion) ? INITIAL_DATA.dataVersion : "2026.10.08_v4.0";
   const needsInitialData = !data || 
     !data.gam3eyat || 
@@ -376,7 +449,7 @@ function loadData() {
     !data.registeredMembers ||
     data.registeredMembers.length < 15;
 
-  if (needsInitialData) {
+  if (needsInitialData && isMaster) {
     console.log("جاري تحديث بيانات التطبيق تلقائياً إلى النسخة المعتمدة بجميع المشتركين...");
     data = JSON.parse(JSON.stringify(INITIAL_DATA));
     try {
@@ -492,23 +565,223 @@ function loadData() {
 }
 
 function saveData(dataToSave) {
-  // 1. الحفظ المحلي الدائم
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+  const activeUid = (appState && appState.currentManager && appState.currentManager.uid) ? appState.currentManager.uid : "admin_default";
+  const activeEmail = (appState && appState.currentManager && appState.currentManager.email) ? appState.currentManager.email.toLowerCase() : "";
+  const isMaster = activeUid === "CbVrUQlb2pOBZrU6n70MLcG55JN2" || activeUid === "admin_default" || activeEmail === "medogamal750@gmail.com";
+
+  // 1. الحفظ المحلي المعزول لكل مدير
+  try {
+    localStorage.setItem(`gam_data_mgr_${activeUid}`, JSON.stringify(dataToSave));
+    if (isMaster) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+    }
+  } catch (e) {}
 
   // 2. المزامنة السحابية الفورية في Firestore
   if (typeof FirebaseService !== "undefined" && window.isFirebaseConfigured && window.isFirebaseConfigured()) {
-    const activeUid = (appState && appState.currentManager && appState.currentManager.uid) ? appState.currentManager.uid : "admin_default";
     FirebaseService.saveManagerData(activeUid, dataToSave).catch(err => {
       console.warn("خطأ في المزامنة السحابية:", err);
     });
   }
 }
 
+/**
+ * مزامنة يدوية فورية للسحابة بضمان 100%
+ * تمكّن المدير من التأكد من حفظ كافة التعديلات في Firestore فوراً قبل الانتقال لجهاز آخر
+ */
+window.forceManualCloudSync = async function() {
+  const activeUid = (appState && appState.currentManager && appState.currentManager.uid) ? appState.currentManager.uid : "CbVrUQlb2pOBZrU6n70MLcG55JN2";
+  
+  showToast("جاري تأكيد المزامنة مع السحابة... ⏳");
+  try {
+    if (typeof FirebaseService !== "undefined" && window.isFirebaseConfigured && window.isFirebaseConfigured()) {
+      const ok = await FirebaseService.saveManagerData(activeUid, appData);
+      if (ok) {
+        showToast("🟢 تم حفظ وتأكيد مزامنة جميع البيانات مع السحابة بنجاح!");
+      } else {
+        showToast("⚠️ تم الحفظ محلياً وجاري المزامنة مع السحابة في الخلفية.");
+      }
+    } else {
+      showToast("تم الحفظ في المتصفح المحلي بنجاح.");
+    }
+  } catch (err) {
+    console.error("خطأ المزامنة:", err);
+    showToast("⚠️ حدث تنبيه أثناء المزامنة السحابية: " + err.message);
+  }
+};
+
 function getCurrentGam() {
   if (!appData.gam3eyat || !Array.isArray(appData.gam3eyat) || appData.gam3eyat.length === 0) return null;
   const activeGams = appData.gam3eyat.filter(g => !g.isArchived);
   return activeGams.find(g => g.id === appState.currentGamId) || activeGams[0] || appData.gam3eyat[0] || null;
 }
+
+// ==========================================
+// إدارة التنقل وسجل المتصفح الذكي (Browser History & Navigation)
+// ==========================================
+
+function initNavigationHistory() {
+  // 1. تسجيل الحالة الحالية في سجل المتصفح لضمان وجود مرجع للتنقل
+  if (!window.history.state) {
+    try {
+      window.history.replaceState({
+        role: appState.currentRole || "admin",
+        view: "dashboard"
+      }, "", window.location.href);
+    } catch (e) {}
+  }
+
+  // 2. الاستماع لأحداث زر الرجوع في المتصفح (Browser Back / Forward / Mobile Swipe)
+  window.addEventListener("popstate", (event) => {
+    // إغلاق أي نافذة منبثقة أو قائمة منسدلة مفتوحة فوراً
+    document.querySelectorAll(".modal-overlay.active").forEach(m => m.classList.remove("active"));
+    if (typeof closeMgrDropdown === "function") {
+      closeMgrDropdown();
+    }
+
+    const state = event.state;
+    const isManager = Boolean(
+      (appState.isAdminAuthenticated && appState.currentManager) ||
+      (typeof FirebaseService !== "undefined" && FirebaseService.getCurrentUser())
+    );
+
+    // إذا كان المستخدم داخل كشف حساب وضغط زر الرجوع في المتصفح:
+    if (appState.currentRole === "member") {
+      // إذا كان الانتقال بين كشوفات حسابات متعددة
+      if (state && state.role === "member" && state.memberName) {
+        const p = getAllUniqueParticipants().find(x => x.name === state.memberName);
+        if (p) {
+          appState.loggedMember = p;
+          appState.currentRole = "member";
+          updateView();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          return;
+        }
+      }
+
+      // الرجوع الذكي للوحة إدارة الجمعيات دون الخروج من الموقع إلى جوجل
+      if (isManager) {
+        appState.loggedMember = null;
+        appState.currentRole = "admin";
+        appState.isAdminAuthenticated = true;
+        renderGamTabs();
+        setupMonthSelector();
+        updateView();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        showToast("تمت العودة للوحة تحكم الجمعيات");
+        return;
+      } else {
+        appState.loggedMember = null;
+        appState.currentRole = "landing";
+        updateView();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+    }
+
+    // التعامل مع الحالات المسجلة الأخرى في السجل
+    if (state && state.role) {
+      if (state.role === "admin" && isManager) {
+        appState.loggedMember = null;
+        appState.currentRole = "admin";
+        renderGamTabs();
+        setupMonthSelector();
+        updateView();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else if (state.role === "landing") {
+        appState.loggedMember = null;
+        appState.currentRole = "landing";
+        updateView();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else if (state.role === "member" && state.memberName) {
+        const p = getAllUniqueParticipants().find(x => x.name === state.memberName);
+        if (p) {
+          appState.loggedMember = p;
+          appState.currentRole = "member";
+          updateView();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+      }
+    }
+  });
+}
+
+/**
+ * دالة الرجوع المباشر من داخل كشف الحساب
+ */
+window.goBackFromStatement = function() {
+  if (window.history.state && window.history.state.view === "member-statement" && window.history.length > 1) {
+    window.history.back();
+  } else {
+    const isManager = Boolean(
+      (appState.isAdminAuthenticated && appState.currentManager) ||
+      (typeof FirebaseService !== "undefined" && FirebaseService.getCurrentUser())
+    );
+    if (isManager) {
+      appState.loggedMember = null;
+      appState.currentRole = "admin";
+      appState.isAdminAuthenticated = true;
+      renderGamTabs();
+      setupMonthSelector();
+      updateView();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      showToast("تمت العودة للوحة تحكم الجمعيات");
+    } else {
+      appState.loggedMember = null;
+      appState.currentRole = "landing";
+      updateView();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+};
+
+/**
+ * معالج النقر على شعار جمعياتي في شريط العنوان والتذييل:
+ * ينقل المدير فوراً للوحة إدارة جمعياته بدون إعادة تحميل الصفحة
+ */
+window.handleBrandLogoClick = function(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  // إغلاق أي نوافذ منبثقة أو قوائم مفتوحة
+  document.querySelectorAll(".modal-overlay.active").forEach(m => m.classList.remove("active"));
+  if (typeof closeMgrDropdown === "function") {
+    closeMgrDropdown();
+  }
+
+  const isManager = Boolean(
+    (appState.isAdminAuthenticated && appState.currentManager) ||
+    (typeof FirebaseService !== "undefined" && FirebaseService.getCurrentUser())
+  );
+
+  if (isManager) {
+    appState.loggedMember = null;
+    appState.currentRole = "admin";
+    appState.isAdminAuthenticated = true;
+
+    try {
+      const cleanPath = window.location.pathname || "/";
+      window.history.pushState({ role: "admin", view: "dashboard" }, "", cleanPath);
+    } catch (err) {}
+
+    renderGamTabs();
+    setupMonthSelector();
+    updateView();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    showToast("تم الانتقال إلى لوحة إدارة جمعياتك");
+  } else {
+    appState.loggedMember = null;
+    appState.currentRole = "landing";
+    try {
+      const cleanPath = window.location.pathname || "/";
+      window.history.pushState({ role: "landing", view: "home" }, "", cleanPath);
+    } catch (err) {}
+    updateView();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+};
 
 // ==========================================
 // 2. التهيئة عند التشغيل
@@ -533,10 +806,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateView();
   }
 
+  // تفعيل إدارة سجل المتصفح الذكي للرجوع السلس
+  initNavigationHistory();
+
   // 4. جلب أحدث بيانات الجمعيات العامة من السحابة في الخلفية دون تعطيل أو تجميد استجابة واجهة المستخدم
   if (typeof FirebaseService !== "undefined" && window.isFirebaseConfigured && window.isFirebaseConfigured() && typeof firebaseDb !== "undefined") {
     (async () => {
       try {
+        // حماية عزل البيانات: إذا كان هناك مدير مسجل دخوله حالياً، لا نلمس بياناته بالبيانات العامة
+        const curMgr = FirebaseService.getCurrentUser();
+        if (curMgr || appState.currentManager) {
+          return;
+        }
+
         const publicSnap = await firebaseDb.collection("public_data").doc("active_statement").get();
         if (publicSnap.exists) {
           const cData = publicSnap.data();
@@ -548,7 +830,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                Array.isArray(cData.registeredMembers) &&
                                cData.registeredMembers.length >= 15;
 
-          if (isCloudValid) {
+          if (isCloudValid && !appState.currentManager && !FirebaseService.getCurrentUser()) {
             setAppData(cData);
             if (appData.gam3eyat && appData.gam3eyat[0]) {
               const activeGam = appData.gam3eyat.find(g => g.id === appState.currentGamId) || appData.gam3eyat[0];
@@ -837,7 +1119,13 @@ function renderGamTabs() {
     btn.innerHTML = gam.name;
     btn.onclick = () => {
       appState.currentGamId = gam.id;
-      appState.currentMonthKey = getSmartCurrentMonthKey(gam);
+      // نحافظ على الشهر الفعال الموحد الذي حدده المدير بدلاً من إجباره على شهر التقويم
+      if (gam.currentMonthKey && gam.months.some(m => m.key === gam.currentMonthKey)) {
+        appState.currentMonthKey = gam.currentMonthKey;
+      } else {
+        const matching = gam.months.find(m => m.key === appState.currentMonthKey || (m.key && appState.currentMonthKey && m.key.split('_')[0] === appState.currentMonthKey.split('_')[0]));
+        appState.currentMonthKey = matching ? matching.key : getSmartCurrentMonthKey(gam);
+      }
       syncMonthPaymentStatuses(gam, appState.currentMonthKey);
       appState.currentRole = "admin";
       appState.isAdminAuthenticated = true;
@@ -1518,6 +1806,22 @@ window.openDirectMemberStatement = function(rawName) {
   }
 
   if (matched) {
+    // التأكد من تسجيل حالة لوحة تحكم المدير كحالة سابقة في المتصفح قبل فتح كشف الحساب
+    if (!window.history.state || window.history.state.role !== "admin") {
+      try {
+        window.history.replaceState({ role: "admin", view: "dashboard" }, "", window.location.href);
+      } catch (e) {}
+    }
+
+    // دفع كشف حساب المشترك كحالة جديدة في المتصفح
+    try {
+      window.history.pushState({
+        role: "member",
+        memberName: matched.name,
+        view: "member-statement"
+      }, "", window.location.href);
+    } catch (e) {}
+
     appState.loggedMember = matched;
     appState.currentRole = "member";
     updateView();
@@ -1537,17 +1841,19 @@ function renderMemberSection() {
   const dashboardSec = document.getElementById("member-dashboard-section");
   const isManagerViewing = Boolean(appState.isAdminAuthenticated && appState.currentManager);
 
-  // زر العودة السريع للوحة تحكم المدير من داخل كشف الحساب
+  // زر الرجوع السريع للوحة تحكم المدير أو تسجيل الخروج من داخل كشف الحساب
   const returnBtn = document.getElementById("btn-return-to-admin");
+  const returnBtnText = document.getElementById("btn-return-to-admin-text");
   if (returnBtn) {
-    returnBtn.style.display = isManagerViewing ? "inline-flex" : "none";
-    returnBtn.onclick = () => {
-      appState.loggedMember = null;
-      appState.currentRole = "admin";
-      updateView();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      showToast("تمت العودة للوحة تحكم المدير بنجاح");
-    };
+    returnBtn.style.display = "inline-flex";
+    if (isManagerViewing) {
+      if (returnBtnText) returnBtnText.textContent = "الرجوع إلى الجمعيات";
+      returnBtn.title = "الرجوع المباشر للوحة تحكم الجمعيات";
+    } else {
+      if (returnBtnText) returnBtnText.textContent = "تسجيل الخروج";
+      returnBtn.title = "تسجيل الخروج من كشف الحساب";
+    }
+    returnBtn.onclick = () => window.goBackFromStatement();
   }
 
   // ضبط زر الرجوع في شاشة تسجيل دخول المشترك
@@ -1942,7 +2248,7 @@ function renderMemberPortfolio() {
         totalAllObligation += totalObligation;
 
         // فحص هل موعد الاستلام قد حان/مضى أم قادم
-        const curMonthKey = getSmartCurrentMonthKey(gam);
+        const curMonthKey = gam.currentMonthKey || getSmartCurrentMonthKey(gam);
         const payoutMonthIdx = gam.months.findIndex(mo => mo.key === m.turnMonth);
         const curMonthIdx = gam.months.findIndex(mo => mo.key === curMonthKey);
         const isPayoutReceived = (payoutMonthIdx !== -1 && curMonthIdx !== -1 && curMonthIdx >= payoutMonthIdx);
@@ -1985,7 +2291,7 @@ function renderMemberPortfolio() {
     const m = entry.memberRecord;
     const subIdx = entry.subIndex;
     const myShare = entry.myShare;
-    const curMonthKey = getSmartCurrentMonthKey(gam);
+    const curMonthKey = gam.currentMonthKey || getSmartCurrentMonthKey(gam);
     const curStatuses = m.payments[curMonthKey] || ["unpaid"];
     const st = curStatuses[subIdx] || "unpaid";
 
@@ -2063,7 +2369,7 @@ function renderMemberPortfolio() {
     const payoutMonthObj = gam.months.find(mo => mo.key === m.turnMonth);
     const payoutName = payoutMonthObj ? payoutMonthObj.name : m.payoutDate;
 
-    const curMonthKey = getSmartCurrentMonthKey(gam);
+    const curMonthKey = gam.currentMonthKey || getSmartCurrentMonthKey(gam);
     const curStatuses = m.payments[curMonthKey] || ["unpaid"];
     const curSt = curStatuses[subIdx] || "unpaid";
 
@@ -3480,15 +3786,16 @@ function attachEventListeners() {
   const selMonth = document.getElementById("select-active-month");
   if (selMonth) {
     selMonth.onchange = (e) => {
-      appState.currentMonthKey = e.target.value;
+      const chosenKey = e.target.value;
+      appState.currentMonthKey = chosenKey;
       const gam = getCurrentGam();
-      if (gam) {
-        syncMonthPaymentStatuses(gam, e.target.value);
-        saveData(appData);
-      }
+      syncAllGam3eyatToSelectedMonth(chosenKey, gam);
+      saveData(appData);
       renderAdminDashboard();
       renderMatrixTable();
       updateFilterDropdownUI();
+      const monthText = selMonth.options[selMonth.selectedIndex] ? selMonth.options[selMonth.selectedIndex].text : chosenKey;
+      showToast(`تم توحيد شهر (${monthText}) على جميع الجمعيات بنجاح`);
     };
   }
 
@@ -4527,13 +4834,17 @@ function attachEventListeners() {
         appState.currentRole = "admin";
         appState.isAdminAuthenticated = true;
 
+        // إخفاء إشعار تفعيل البريد إذا كان معروضاً
+        const noticeEl = document.getElementById("mgr-verification-notice");
+        if (noticeEl) noticeEl.style.display = "none";
+
         // إغلاق نافذة تسجيل الدخول فوراً والانتقال للوحة التحكم دون أي تأخير
         closeModal("modal-manager-auth");
         formLogin.reset();
 
         const cloudNameEl = document.getElementById("cloud-manager-name");
         const cloudIconEl = document.getElementById("cloud-status-icon");
-        if (cloudNameEl) cloudNameEl.textContent = res.user.displayName || 'محمد العزب';
+        if (cloudNameEl) cloudNameEl.textContent = res.user.displayName || email || 'المدير';
         if (cloudIconEl) cloudIconEl.innerHTML = get3DShieldIconSvg();
         const chevron = document.getElementById("cloud-dropdown-chevron");
         if (chevron) chevron.style.display = "inline-block";
@@ -4543,20 +4854,53 @@ function attachEventListeners() {
         updateView();
         showToast(`أهلاً بك مجدداً يا ${res.user.displayName || 'المدير'}! تم تسجيل الدخول بنجاح`);
 
-        // مزامنة أحدث بيانات الحساب السحابي في الخلفية بهدوء
+        // مزامنة أحدث بيانات الحساب السحابي في الخلفية بهدوء مع عزل تام
         (async () => {
           try {
             if (res.user && res.user.uid) {
-              const mgrData = await FirebaseService.getManagerData(res.user.uid);
-              if (mgrData && mgrData.gam3eyat && mgrData.gam3eyat.length > 0) {
-                setAppData(mgrData);
-                renderGamTabs();
-                setupMonthSelector();
-                updateView();
+              const isMaster = (res.user.email && res.user.email.toLowerCase() === "medogamal750@gmail.com") || res.user.uid === "CbVrUQlb2pOBZrU6n70MLcG55JN2";
+              let mgrData = await FirebaseService.getManagerData(res.user.uid);
+
+              if (!isMaster) {
+                // تصفير فوري لجمعيات الأدمن التي نسخت خطأ في السابق لهذا الحساب
+                if (mgrData && Array.isArray(mgrData.gam3eyat) && mgrData.gam3eyat.some(g => g.id === "gam1" || g.id === "gam2" || g.id === "gam_winter_2026")) {
+                  console.warn("تصفير جمعيات الأدمن المنسوخة خطأ لحساب غير رئيسي...");
+                  mgrData = {
+                    currency: "ر.س",
+                    adminPin: mgrData.adminPin || "1234",
+                    gam3eyat: [],
+                    registeredMembers: [],
+                    dataVersion: "2026.10.08_v4.0"
+                  };
+                  await FirebaseService.saveManagerData(res.user.uid, mgrData);
+                }
+
+                if (mgrData && Array.isArray(mgrData.gam3eyat)) {
+                  setAppData(mgrData);
+                } else {
+                  const cleanData = {
+                    currency: "ر.س",
+                    adminPin: "1234",
+                    gam3eyat: [],
+                    registeredMembers: [],
+                    dataVersion: "2026.10.08_v4.0"
+                  };
+                  setAppData(cleanData);
+                  await FirebaseService.saveManagerData(res.user.uid, cleanData);
+                }
               } else {
-                const currentRealData = (appData && appData.gam3eyat && appData.gam3eyat.length > 0) ? appData : loadData();
-                await FirebaseService.saveManagerData(res.user.uid, currentRealData);
+                if (mgrData && Array.isArray(mgrData.gam3eyat) && mgrData.gam3eyat.length > 0) {
+                  setAppData(mgrData);
+                  try {
+                    localStorage.setItem(`gam_data_mgr_${res.user.uid}`, JSON.stringify(mgrData));
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(mgrData));
+                  } catch (e) {}
+                }
               }
+
+              renderGamTabs();
+              setupMonthSelector();
+              updateView();
             }
           } catch (syncErr) {
             console.warn("تنبيه في مزامنة السحابة بالخلفية:", syncErr);
@@ -4564,6 +4908,20 @@ function attachEventListeners() {
         })();
       } catch (err) {
         console.warn("تنبيه تسجيل الدخول السحابي:", err);
+
+        // معالجة حالة الحساب المعلق بانتظار تفعيل رابط البريد الإلكتروني
+        if (err.message === "EMAIL_NOT_VERIFIED") {
+          const uEmail = err.userEmail || email;
+          const noticeEl = document.getElementById("mgr-verification-notice");
+          if (noticeEl) {
+            noticeEl.style.display = "block";
+            const emailDisplay = document.getElementById("notice-registered-email");
+            if (emailDisplay) emailDisplay.textContent = uEmail;
+          }
+          alert(`⚠️ حسابك غير مفعل بعد!\n\nيجب فتح الرسالة المرسلة إلى بريدك الإلكتروني:\n(${uEmail})\nوالضغط على رابط التفعيل أولاً للتمكن من الدخول إلى لوحة التحكم.\n\nإذا لم تجد الرسالة، تفقد مجلد الرسائل غير المرغوب فيها (Spam).`);
+          return;
+        }
+
         const correctPin = String(appData.adminPin || "1234");
         if (pass === correctPin || pass === "1234" || pass === "admin" || pass === "19922212") {
           const fallbackUser = {
@@ -4600,7 +4958,7 @@ function attachEventListeners() {
     };
   }
 
-  // نموذج 2: تسجيل حساب مدير جديد بنظام فارغ مع إرسال رابط تأكيد للبريد
+  // نموذج 2: تسجيل حساب مدير جديد بنظام فارغ مع إرسال رابط تأكيد للبريد (لا يدخل تلقائياً إلا بعد تفعيل الرابط)
   if (formReg) {
     formReg.onsubmit = async (e) => {
       e.preventDefault();
@@ -4644,48 +5002,66 @@ function attachEventListeners() {
         submitBtn.disabled = true;
         const res = await FirebaseService.registerManager(email, pass, name, phone);
         
-        // تعيين المدير الجديد بنظام فارغ تماماً ومستقل (0 جمعيات)
-        appState.currentManager = res.user;
-        appState.currentRole = "admin";
-        appState.isAdminAuthenticated = true;
+        // إبقاء المستخدم خارج لوحة التحكم لحين تفعيل بريده الإلكتروني
+        appState.currentManager = null;
+        appState.isAdminAuthenticated = false;
+        appState.currentRole = "landing";
 
-        const dataToSet = {
-          adminPin: "1234",
-          currency: "ر.س",
-          gam3eyat: [],
-          registeredMembers: []
-        };
-
-        setAppData(dataToSet);
-        if (res.user && res.user.uid) {
-          await FirebaseService.saveManagerData(res.user.uid, dataToSet);
-        }
-        saveData(dataToSet);
-
-        appState.currentGamId = "";
-        appState.currentMonthKey = "";
-
-        const cloudNameEl = document.getElementById("cloud-manager-name");
-        const cloudIconEl = document.getElementById("cloud-status-icon");
-        if (cloudNameEl) cloudNameEl.textContent = name;
-        if (cloudIconEl) cloudIconEl.innerHTML = get3DShieldIconSvg();
-
-        closeModal("modal-manager-auth");
+        // إفراغ نموذج التسجيل والانتقال لتبويب تسجيل الدخول وتعبئة البريد المسجل
         formReg.reset();
-        renderGamTabs();
-        setupMonthSelector();
-        updateView();
-
-        if (res.emailVerificationSent) {
-          alert(`تم إنشاء حساب المدير بنجاح يا ${name}!\n\nتم إرسال رابط تأكيد فوري إلى بريدك الإلكتروني:\n${email}\n\nيُرجى مراجعة صندوق الوارد (أو مجلد الرسائل غير المرغوب فيها Spam) والضغط على الرابط لتأكيد ملكية البريد.`);
-        } else {
-          showToast(`تهانينا يا ${name}! تم فتح نظامك الخاص بنجاح وهو جاهز لإضافة جمعياتك`);
+        switchAuthTab("login");
+        const loginEmailInput = document.getElementById("mgr-login-email");
+        if (loginEmailInput) loginEmailInput.value = email;
+        const loginPassInput = document.getElementById("mgr-login-password");
+        if (loginPassInput) {
+          loginPassInput.value = "";
+          loginPassInput.focus();
         }
+
+        // إظهار بطاقة التنبيه الرسمية لتفعيل البريد
+        const noticeEl = document.getElementById("mgr-verification-notice");
+        if (noticeEl) {
+          noticeEl.style.display = "block";
+          const emailDisplay = document.getElementById("notice-registered-email");
+          if (emailDisplay) emailDisplay.textContent = email;
+        }
+
+        alert(`🎉 تم إنشاء حساب المدير بنجاح يا ${name}!\n\n📧 أرسلنا لك رابط تأكيد وتفعيل رسمي إلى بريدك الإلكتروني:\n${email}\n\n⚠️ خطوة أخيرة مطلوبة:\nيُرجى الذهاب إلى بريدك الإلكتروني والضغط على الرابط لتأكيد حسابك.\nبعد الضغط على الرابط، ارجع إلى هنا واكتب كلمة المرور وسجّل دخولك.`);
       } catch (err) {
         alert(err.message || "تعذر إنشاء الحساب، يُرجى المحاولة مرة أخرى");
       } finally {
         submitBtn.textContent = origText;
         submitBtn.disabled = false;
+      }
+    };
+  }
+
+  // زر إعادة إرسال رابط تأكيد وتفعيل الحساب
+  const btnResendVer = document.getElementById("btn-resend-verification");
+  if (btnResendVer) {
+    btnResendVer.onclick = async () => {
+      const email = (document.getElementById("mgr-login-email").value || "").trim();
+      const pass = (document.getElementById("mgr-login-password").value || "").trim();
+      if (!email) {
+        alert("يرجى إدخال البريد الإلكتروني في حقل تسجيل الدخول أولاً.");
+        return;
+      }
+      if (!pass) {
+        alert("يرجى إدخال كلمة المرور للتحقق من هويتك وإعادة إرسال الرابط.");
+        document.getElementById("mgr-login-password").focus();
+        return;
+      }
+      const origBtnText = btnResendVer.textContent;
+      try {
+        btnResendVer.textContent = "جاري إرسال الرابط...";
+        btnResendVer.disabled = true;
+        await FirebaseService.resendVerificationEmail(email, pass);
+        alert(`✅ تم إرسال رابط تأكيد جديد بنجاح إلى:\n(${email})\n\nيرجى مراجعة البريد والضغط على الرابط لتفعيل الحساب.`);
+      } catch (rErr) {
+        alert("تعذر إعادة إرسال الرابط: " + (rErr.message || "تأكد من صحة البريد وكلمة المرور"));
+      } finally {
+        btnResendVer.textContent = origBtnText;
+        btnResendVer.disabled = false;
       }
     };
   }
@@ -5041,6 +5417,20 @@ function setupManagerCloudLifecycle() {
     }
 
     if (managerUser) {
+      // التحقق الصارم من تفعيل البريد الإلكتروني (يستثنى حساب الأدمن الرئيسي)
+      const isMasterAdmin = (managerUser.email && managerUser.email.toLowerCase() === "medogamal750@gmail.com") || managerUser.uid === "CbVrUQlb2pOBZrU6n70MLcG55JN2" || managerUser.uid === "admin_default";
+      if (!managerUser.emailVerified && !isMasterAdmin && !managerUser.isLocalOnly) {
+        console.warn("جلسة مدير غير مؤكدة البريد، جاري تسجيل الخروج الفوري...");
+        try {
+          await FirebaseService.logoutManager();
+        } catch (e) {}
+        appState.currentManager = null;
+        appState.isAdminAuthenticated = false;
+        appState.currentRole = "landing";
+        updateView();
+        return;
+      }
+
       appState.currentManager = managerUser;
       appState.isAdminAuthenticated = true;
       appState.currentRole = "admin";
@@ -5049,20 +5439,40 @@ function setupManagerCloudLifecycle() {
       const chevron = document.getElementById("cloud-dropdown-chevron");
       if (chevron) chevron.style.display = "inline-block";
 
-      // جلب بيانات المدير من السحابة أو التخزين المحلي
+      // جلب بيانات المدير من السحابة مع عزل تام ومستقل لكل مدير
       try {
-        const cloudData = await FirebaseService.getManagerData(managerUser.uid);
-        const targetVer = (typeof INITIAL_DATA !== "undefined" && INITIAL_DATA.dataVersion) ? INITIAL_DATA.dataVersion : "2026.10.08_v4.0";
-        const isCloudValid = cloudData &&
-                             Array.isArray(cloudData.gam3eyat) &&
-                             cloudData.gam3eyat.length > 0 &&
-                             cloudData.dataVersion === targetVer &&
-                             Array.isArray(cloudData.registeredMembers) &&
-                             cloudData.registeredMembers.length >= 15;
+        let cloudData = await FirebaseService.getManagerData(managerUser.uid);
 
-        if (isCloudValid) {
-          setAppData(cloudData);
-          if (appData.gam3eyat.length > 0) {
+        if (!isMasterAdmin) {
+          // فحص وتصفير فوري لجمعيات الأدمن التي نسخت خطأ في السابق لهذا الحساب
+          if (cloudData && Array.isArray(cloudData.gam3eyat) && cloudData.gam3eyat.some(g => g.id === "gam1" || g.id === "gam2" || g.id === "gam_winter_2026")) {
+            console.warn("تصفير جمعيات الأدمن المنسوخة خطأ لحساب غير رئيسي...");
+            cloudData = {
+              currency: "ر.س",
+              adminPin: cloudData.adminPin || "1234",
+              gam3eyat: [],
+              registeredMembers: [],
+              dataVersion: "2026.10.08_v4.0"
+            };
+            await FirebaseService.saveManagerData(managerUser.uid, cloudData);
+          }
+
+          if (cloudData && Array.isArray(cloudData.gam3eyat)) {
+            setAppData(cloudData);
+          } else {
+            // مدير جديد يبدأ بنظام فارغ ونظيف تماماً
+            const cleanNewData = {
+              currency: "ر.س",
+              adminPin: "1234",
+              gam3eyat: [],
+              registeredMembers: [],
+              dataVersion: "2026.10.08_v4.0"
+            };
+            setAppData(cleanNewData);
+            await FirebaseService.saveManagerData(managerUser.uid, cleanNewData);
+          }
+
+          if (appData.gam3eyat && appData.gam3eyat.length > 0) {
             const activeGam = appData.gam3eyat.find(g => g.id === appState.currentGamId) || appData.gam3eyat[0];
             appState.currentGamId = activeGam.id;
             appState.currentMonthKey = getSmartCurrentMonthKey(activeGam);
@@ -5072,19 +5482,36 @@ function setupManagerCloudLifecycle() {
             appState.currentMonthKey = "";
           }
         } else {
-          // إذا كانت بيانات حساب المدير في السحابة قديمة أو تفتقر لبيانات المشتركين الـ 19 المعتمدة:
-          // نقوم تلقائياً بترقية بياناته وحفظ النسخة المعتمدة الشاملة في حسابه السحابي وفي السحابة العامة
-          console.log("جاري ترقية وتحديث بيانات حساب المدير السحابي بالنسخة المعتمدة بجميع المشتركين...");
-          const currentRealData = JSON.parse(JSON.stringify(INITIAL_DATA));
-          setAppData(currentRealData);
-          if (appData.gam3eyat.length > 0) {
-            const activeGam = appData.gam3eyat.find(g => g.id === appState.currentGamId) || appData.gam3eyat[0];
-            appState.currentGamId = activeGam.id;
-            appState.currentMonthKey = getSmartCurrentMonthKey(activeGam);
-            syncMonthPaymentStatuses(activeGam, appState.currentMonthKey);
-          }
-          if (managerUser && managerUser.uid) {
-            await FirebaseService.saveManagerData(managerUser.uid, currentRealData);
+          // حساب الأدمن الرئيسي (محمد العزب / medogamal750@gmail.com)
+          if (cloudData && Array.isArray(cloudData.gam3eyat) && cloudData.gam3eyat.length > 0) {
+            setAppData(cloudData);
+            try {
+              localStorage.setItem(`gam_data_mgr_${managerUser.uid}`, JSON.stringify(cloudData));
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudData));
+            } catch(e) {}
+            if (appData.gam3eyat.length > 0) {
+              const activeGam = appData.gam3eyat.find(g => g.id === appState.currentGamId) || appData.gam3eyat[0];
+              appState.currentGamId = activeGam.id;
+              appState.currentMonthKey = activeGam.currentMonthKey || getSmartCurrentMonthKey(activeGam);
+              syncMonthPaymentStatuses(activeGam, appState.currentMonthKey);
+            }
+          } else if (!cloudData) {
+            // انقطاع إنترنت أو مهلة: نعتمد البيانات المحلية مؤقتاً ونمنع مسح السحابة نهائياً
+            console.warn("تعذر جلب بيانات السحابة حالياً، تم استخدام التخزين المحلي مع حماية السحابة من المسح.");
+          } else {
+            // حساب جديد لم ينشئ أي جمعيات بعد
+            console.log("تهيئة بيانات الحساب الجديد بالنسخة المعتمدة...");
+            const masterRealData = JSON.parse(JSON.stringify(INITIAL_DATA));
+            setAppData(masterRealData);
+            if (appData.gam3eyat.length > 0) {
+              const activeGam = appData.gam3eyat.find(g => g.id === appState.currentGamId) || appData.gam3eyat[0];
+              appState.currentGamId = activeGam.id;
+              appState.currentMonthKey = getSmartCurrentMonthKey(activeGam);
+              syncMonthPaymentStatuses(activeGam, appState.currentMonthKey);
+            }
+            if (managerUser && managerUser.uid) {
+              await FirebaseService.saveManagerData(managerUser.uid, masterRealData);
+            }
           }
         }
       } catch (err) {
