@@ -274,7 +274,8 @@ function syncMonthPaymentStatuses(gam, monthKey) {
           const count = m.isShared ? 2 : 1;
           m.payments[mo.key] = Array(count).fill(mIdx <= curMonthIdx ? "unpaid" : "future");
         } else {
-          m.payments[mo.key] = m.payments[mo.key].map(st => {
+          const payArr = Array.isArray(m.payments[mo.key]) ? m.payments[mo.key] : [m.payments[mo.key]];
+          m.payments[mo.key] = payArr.map(st => {
             // الشهور حتى الشهر الحالي: أي حالة لم تستحق (future) تصبح متأخر (unpaid) تلقائياً
             if (mIdx <= curMonthIdx && st === "future") return "unpaid";
             // الشهور القادمة بعد الشهر الحالي: أي حالة متأخر تعود إلى لم تستحق (future)
@@ -438,19 +439,14 @@ function loadData(targetUid) {
     }
   }
 
-  // فحص ذكي للترقية التلقائية: إذا كانت البيانات غير موجودة أو قديمة أو تفتقر للمشتركين الـ 19 المعتمدين (خاص بالأدمن الرئيسي)
-  const targetVersion = (typeof INITIAL_DATA !== "undefined" && INITIAL_DATA.dataVersion) ? INITIAL_DATA.dataVersion : "2026.10.08_v4.0";
+  // فحص ذكي للترقية التلقائية: فقط إذا كانت البيانات غير موجودة أو فارغة تماماً
   const needsInitialData = !data || 
     !data.gam3eyat || 
     !Array.isArray(data.gam3eyat) || 
-    data.gam3eyat.length === 0 ||
-    !data.dataVersion ||
-    data.dataVersion !== targetVersion ||
-    !data.registeredMembers ||
-    data.registeredMembers.length < 15;
+    data.gam3eyat.length === 0;
 
   if (needsInitialData && isMaster) {
-    console.log("جاري تحديث بيانات التطبيق تلقائياً إلى النسخة المعتمدة بجميع المشتركين...");
+    console.log("تهيئة بيانات التطبيق بالنسخة المعتمدة...");
     data = JSON.parse(JSON.stringify(INITIAL_DATA));
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -557,7 +553,12 @@ function loadData(targetUid) {
     }
 
     if (modified) {
-      saveData(data);
+      try {
+        localStorage.setItem(`gam_data_mgr_${activeUid}`, JSON.stringify(data));
+        if (isMaster) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
+      } catch (e) {}
     }
   }
 
@@ -565,11 +566,12 @@ function loadData(targetUid) {
 }
 
 function saveData(dataToSave) {
-  const activeUid = (appState && appState.currentManager && appState.currentManager.uid) ? appState.currentManager.uid : "admin_default";
-  const activeEmail = (appState && appState.currentManager && appState.currentManager.email) ? appState.currentManager.email.toLowerCase() : "";
+  const curUser = (typeof FirebaseService !== "undefined" && FirebaseService.getCurrentUser) ? FirebaseService.getCurrentUser() : null;
+  const activeUid = (appState && appState.currentManager && appState.currentManager.uid) || (curUser && curUser.uid) || "CbVrUQlb2pOBZrU6n70MLcG55JN2";
+  const activeEmail = (appState && appState.currentManager && appState.currentManager.email) ? appState.currentManager.email.toLowerCase() : ((curUser && curUser.email) ? curUser.email.toLowerCase() : "");
   const isMaster = activeUid === "CbVrUQlb2pOBZrU6n70MLcG55JN2" || activeUid === "admin_default" || activeEmail === "medogamal750@gmail.com";
 
-  // 1. الحفظ المحلي المعزول لكل مدير
+  // 1. الحفظ المحلي التلقائي المعزول والشامل
   try {
     localStorage.setItem(`gam_data_mgr_${activeUid}`, JSON.stringify(dataToSave));
     if (isMaster) {
@@ -577,10 +579,10 @@ function saveData(dataToSave) {
     }
   } catch (e) {}
 
-  // 2. المزامنة السحابية الفورية في Firestore
+  // 2. المزامنة السحابية الفورية في Google Cloud Firestore
   if (typeof FirebaseService !== "undefined" && window.isFirebaseConfigured && window.isFirebaseConfigured()) {
     FirebaseService.saveManagerData(activeUid, dataToSave).catch(err => {
-      console.warn("خطأ في المزامنة السحابية:", err);
+      console.warn("خطأ في المزامنة السحابية التلقائية:", err);
     });
   }
 }
@@ -822,42 +824,23 @@ document.addEventListener("DOMContentLoaded", async () => {
         const publicSnap = await firebaseDb.collection("public_data").doc("active_statement").get();
         if (publicSnap.exists) {
           const cData = publicSnap.data();
-          const targetVer = (typeof INITIAL_DATA !== "undefined" && INITIAL_DATA.dataVersion) ? INITIAL_DATA.dataVersion : "2026.10.08_v4.0";
-          const isCloudValid = cData &&
-                               Array.isArray(cData.gam3eyat) &&
-                               cData.gam3eyat.length > 0 &&
-                               cData.dataVersion === targetVer &&
-                               Array.isArray(cData.registeredMembers) &&
-                               cData.registeredMembers.length >= 15;
-
-          if (isCloudValid && !appState.currentManager && !FirebaseService.getCurrentUser()) {
-            setAppData(cData);
-            if (appData.gam3eyat && appData.gam3eyat[0]) {
-              const activeGam = appData.gam3eyat.find(g => g.id === appState.currentGamId) || appData.gam3eyat[0];
-              appState.currentGamId = activeGam.id;
-              appState.currentMonthKey = getSmartCurrentMonthKey(activeGam);
-              syncMonthPaymentStatuses(activeGam, appState.currentMonthKey);
-            }
-            renderGamTabs();
-            setupMonthSelector();
-            updateView();
-          } else {
-            console.warn("تم اكتشاف بيانات سحابية عامة قديمة، جاري تحديث السحابة تلقائياً بالنسخة المعتمدة بجميع المشتركين...");
-            try {
-              const freshPayload = JSON.parse(JSON.stringify(INITIAL_DATA));
-              freshPayload.lastUpdated = firebase.firestore.FieldValue.serverTimestamp();
-              await firebaseDb.collection("public_data").doc("active_statement").set(freshPayload, { merge: true });
-            } catch(syncErr) {
-              console.warn("تعذر كتابة البيانات المحدثة في السحابة العامة:", syncErr);
+          if (cData && Array.isArray(cData.gam3eyat) && cData.gam3eyat.length > 0) {
+            if (!appState.currentManager && !FirebaseService.getCurrentUser()) {
+              setAppData(cData);
+              try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(cData));
+              } catch(e) {}
+              if (appData.gam3eyat && appData.gam3eyat[0]) {
+                const activeGam = appData.gam3eyat.find(g => g.id === appState.currentGamId) || appData.gam3eyat[0];
+                appState.currentGamId = activeGam.id;
+                appState.currentMonthKey = activeGam.currentMonthKey || getSmartCurrentMonthKey(activeGam);
+                syncMonthPaymentStatuses(activeGam, appState.currentMonthKey);
+              }
+              renderGamTabs();
+              setupMonthSelector();
+              updateView();
             }
           }
-        } else {
-          // إنشاء المستند السحابي العام فوراً بالنسخة المعتمدة
-          try {
-            const freshPayload = JSON.parse(JSON.stringify(INITIAL_DATA));
-            freshPayload.lastUpdated = firebase.firestore.FieldValue.serverTimestamp();
-            await firebaseDb.collection("public_data").doc("active_statement").set(freshPayload, { merge: true });
-          } catch(initErr) {}
         }
       } catch (e) {
         console.warn("Public cloud data fetch notice:", e);
@@ -942,7 +925,7 @@ async function checkMagicLink() {
       const lookupKey = memberName || memberKey;
       const cloudRes = await FirebaseService.fetchMemberStatementFromCloud(managerUid, lookupKey, authPin);
       if (cloudRes && cloudRes.managerData) {
-        appData = cloudRes.managerData;
+        setAppData(cloudRes.managerData);
         const all = getAllUniqueParticipants();
         let matched = null;
         if (memberName && memberName.trim()) {
@@ -1439,6 +1422,8 @@ function renderMatrixTable() {
   const tbody = document.getElementById("matrix-body");
   const tfoot = document.getElementById("matrix-foot");
   const curCurrency = appData.currency || "ر.س";
+
+  if (!thead || !tbody) return;
 
   if (!gam) {
     if (thead) thead.innerHTML = "";
@@ -2074,21 +2059,14 @@ async function handleMemberLogin(identifierInput, pinInput) {
     }
   }
 
-  // 2. جلب أحدث بيانات الجمعيات العامة من السحابة لضمان التحديث اللحظي (فقط إذا كانت النسخة معتمدة ومطابقة)
+  // 2. جلب أحدث بيانات الجمعيات العامة من السحابة لضمان التحديث اللحظي لكشف الحساب
   if (typeof FirebaseService !== "undefined" && window.isFirebaseConfigured && window.isFirebaseConfigured() && typeof firebaseDb !== "undefined") {
     try {
       const publicSnap = await firebaseDb.collection("public_data").doc("active_statement").get();
       if (publicSnap.exists) {
         const cloudData = publicSnap.data();
-        const targetVer = (typeof INITIAL_DATA !== "undefined" && INITIAL_DATA.dataVersion) ? INITIAL_DATA.dataVersion : "2026.10.08_v4.0";
-        const isCloudValid = cloudData && 
-                             Array.isArray(cloudData.gam3eyat) && 
-                             cloudData.gam3eyat.length > 0 &&
-                             cloudData.dataVersion === targetVer &&
-                             Array.isArray(cloudData.registeredMembers) &&
-                             cloudData.registeredMembers.length >= 15;
-        if (isCloudValid) {
-          appData = cloudData;
+        if (cloudData && Array.isArray(cloudData.gam3eyat) && cloudData.gam3eyat.length > 0) {
+          setAppData(cloudData);
         }
       }
     } catch(e) {
@@ -2535,6 +2513,7 @@ function openMembersDirectoryModal() {
 function renderDirectoryTable(query) {
   const tbody = document.getElementById("directory-table-body");
   const countBadge = document.getElementById("dir-count-badge");
+  if (!tbody) return;
   tbody.innerHTML = "";
 
   const all = getAllUniqueParticipants().sort((a, b) => a.name.localeCompare(b.name, 'ar'));
@@ -2546,7 +2525,7 @@ function renderDirectoryTable(query) {
     p.pin.includes(q)
   );
 
-  countBadge.textContent = `${filtered.length} مشترك مسجل`;
+  if (countBadge) countBadge.textContent = `${filtered.length} مشترك مسجل`;
 
   filtered.forEach((p, idx) => {
     // معرفة الجمعيات والأدوار التي يشارك بها

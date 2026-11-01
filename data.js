@@ -271,7 +271,7 @@ const INITIAL_DATA = {
               "paid"
             ],
             "oct": [
-              "future"
+              "paid"
             ],
             "dec": [
               "future"
@@ -362,7 +362,7 @@ const INITIAL_DATA = {
               "payout"
             ],
             "oct": [
-              "future"
+              "paid"
             ],
             "mar": [
               "paid"
@@ -415,8 +415,8 @@ const INITIAL_DATA = {
               "paid"
             ],
             "oct": [
-              "future",
-              "future"
+              "paid",
+              "paid"
             ],
             "feb": [
               "paid",
@@ -524,7 +524,7 @@ const INITIAL_DATA = {
               "paid"
             ],
             "oct": [
-              "future"
+              "paid"
             ],
             "dec": [
               "future"
@@ -577,7 +577,7 @@ const INITIAL_DATA = {
               "paid"
             ],
             "oct": [
-              "future"
+              "paid"
             ],
             "dec": [
               "future"
@@ -628,7 +628,7 @@ const INITIAL_DATA = {
           ],
           "payments": {
             "oct": [
-              "future"
+              "paid"
             ],
             "dec": [
               "future"
@@ -690,7 +690,7 @@ const INITIAL_DATA = {
               "paid"
             ],
             "oct": [
-              "future"
+              "paid"
             ],
             "apr": [
               "paid"
@@ -773,7 +773,7 @@ const INITIAL_DATA = {
               "future"
             ],
             "oct": [
-              "future"
+              "paid"
             ],
             "feb": [
               "paid"
@@ -873,8 +873,8 @@ const INITIAL_DATA = {
               "paid"
             ],
             "oct": [
-              "future",
-              "future"
+              "paid",
+              "paid"
             ],
             "apr": [
               "paid",
@@ -1019,7 +1019,7 @@ const INITIAL_DATA = {
               "paid"
             ],
             "oct": [
-              "future"
+              "paid"
             ],
             "feb": [
               "paid"
@@ -1083,7 +1083,7 @@ const INITIAL_DATA = {
               "paid"
             ],
             "oct": [
-              "future"
+              "paid"
             ],
             "nov": [
               "future"
@@ -1152,7 +1152,7 @@ const INITIAL_DATA = {
               "paid"
             ],
             "oct": [
-              "unpaid"
+              "paid"
             ],
             "nov": [
               "future"
@@ -1204,7 +1204,7 @@ const INITIAL_DATA = {
               "paid"
             ],
             "oct": [
-              "unpaid"
+              "paid"
             ],
             "nov": [
               "future"
@@ -1248,7 +1248,7 @@ const INITIAL_DATA = {
               "paid"
             ],
             "oct": [
-              "unpaid"
+              "paid"
             ],
             "nov": [
               "future"
@@ -1311,7 +1311,7 @@ const INITIAL_DATA = {
               "payout"
             ],
             "oct": [
-              "unpaid"
+              "paid"
             ],
             "nov": [
               "future"
@@ -1431,7 +1431,7 @@ const INITIAL_DATA = {
               "paid"
             ],
             "oct": [
-              "unpaid"
+              "paid"
             ],
             "nov": [
               "payout"
@@ -1486,8 +1486,8 @@ const INITIAL_DATA = {
               "paid"
             ],
             "oct": [
-              "unpaid",
-              "unpaid"
+              "paid",
+              "paid"
             ],
             "nov": [
               "future",
@@ -1567,7 +1567,7 @@ const INITIAL_DATA = {
               "paid"
             ],
             "oct": [
-              "unpaid"
+              "paid"
             ],
             "nov": [
               "future"

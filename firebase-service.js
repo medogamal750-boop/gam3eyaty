@@ -436,11 +436,8 @@ const FirebaseService = {
           firebaseDb.collection("managers").doc(uid).collection("data").doc("current").set(cleanData, { merge: true })
         ];
 
-        // عزل تام للبيانات: فقط حساب الأدمن الرئيسي هو من يُحدث السحابة العامة المشتركة active_statement
-        const isMaster = uid === "CbVrUQlb2pOBZrU6n70MLcG55JN2" || uid === "admin_default" || (cleanData.managerInfo && cleanData.managerInfo.email === "medogamal750@gmail.com");
-        if (isMaster) {
-          writes.push(firebaseDb.collection("public_data").doc("active_statement").set(cleanData, { merge: true }));
-        }
+        // تحديث السحابة العامة active_statement دائماً لضمان أن كشوفات المشتركين وروابط الواتساب تعرض أحدث البيانات فوراً
+        writes.push(firebaseDb.collection("public_data").doc("active_statement").set(cleanData, { merge: true }));
 
         await Promise.race([
           Promise.all(writes),
@@ -490,7 +487,7 @@ const FirebaseService = {
       try {
         const publicSnap = await Promise.race([
           firebaseDb.collection("public_data").doc("active_statement").get(),
-          new Promise(r => setTimeout(() => r(null), 2000))
+          new Promise(r => setTimeout(() => r(null), 12000))
         ]);
         if (publicSnap && publicSnap.exists) {
           managerData = publicSnap.data();
