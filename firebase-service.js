@@ -194,13 +194,13 @@ const FirebaseService = {
         const authPromise = firebaseAuth.signInWithEmailAndPassword(loginEmail, cleanPass);
         const userCredential = await Promise.race([
           authPromise,
-          new Promise((_, reject) => setTimeout(() => reject(new Error("NETWORK_TIMEOUT")), 4000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error("NETWORK_TIMEOUT")), 15000))
         ]);
         const user = userCredential.user;
 
         // تحديث بيانات المستخدم للتحقق من أحدث حالة لتأكيد البريد
         try {
-          await user.reload();
+          await Promise.race([user.reload(), new Promise(r => setTimeout(r, 3000))]);
         } catch (rErr) {}
 
         // التحقق الإلزامي من تفعيل البريد الإلكتروني قبل السماح بالدخول

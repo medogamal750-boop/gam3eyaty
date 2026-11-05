@@ -7,7 +7,7 @@
  * 4. تصميم مالي أنيق وتفاعلي يدعم الأسهم المشتركة وإعادة ترتيب الأدوار.
  */
 
-const STORAGE_KEY = "gam3eyat_app_data_v4_3";
+const STORAGE_KEY = "gam3eyat_app_data_v4_4";
 
 // الشهور القياسية الـ 12
 const ALL_MONTHS_DEF = [
@@ -385,7 +385,37 @@ window.appState = appState;
 let appData = loadData();
 window.appData = appData;
 
+/**
+ * تطبيع وهيكلة بيانات المشتركين والجمعيات لضمان مطابقتها للمصفوفات دائماً ومنع أي أخطاء برمجية
+ */
+function normalizeGamData(data) {
+  if (!data || !Array.isArray(data.gam3eyat)) return data;
+  data.gam3eyat.forEach(gam => {
+    if (!Array.isArray(gam.members)) return;
+    gam.members.forEach(m => {
+      if (!Array.isArray(m.names)) m.names = m.names ? [m.names] : ["(دور متاح)"];
+      if (!Array.isArray(m.phones)) m.phones = m.phones ? [m.phones] : [""];
+      if (!Array.isArray(m.pins)) m.pins = m.pins ? [m.pins] : [""];
+      if (!Array.isArray(m.codes)) m.codes = m.codes ? [m.codes] : [""];
+      if (!Array.isArray(m.shares)) m.shares = m.shares !== undefined ? [m.shares] : [gam.shareAmount || 2000];
+      if (!Array.isArray(m.ibans)) m.ibans = m.ibans ? [m.ibans] : [""];
+      if (!Array.isArray(m.bankNames)) m.bankNames = m.bankNames ? [m.bankNames] : [""];
+      if (!Array.isArray(m.payoutMethods)) m.payoutMethods = m.payoutMethods ? [m.payoutMethods] : ["bank"];
+      if (m.payments && typeof m.payments === "object") {
+        for (let k in m.payments) {
+          if (!Array.isArray(m.payments[k])) {
+            m.payments[k] = [m.payments[k]];
+          }
+        }
+      }
+    });
+  });
+  return data;
+}
+window.normalizeGamData = normalizeGamData;
+
 function setAppData(newData) {
+  normalizeGamData(newData);
   appData = newData;
   window.appData = appData;
 }
@@ -451,7 +481,8 @@ function loadData(targetUid) {
       "gam3eyat_app_data_v3_4", 
       "gam3eyat_app_data_v4_0", 
       "gam3eyat_app_data_v4_1", 
-      "gam3eyat_app_data_v4_2"
+      "gam3eyat_app_data_v4_2",
+      "gam3eyat_app_data_v4_3"
     ];
     oldKeys.forEach(k => localStorage.removeItem(k));
   } catch (e) {}
@@ -479,8 +510,9 @@ function loadData(targetUid) {
     } catch (e) {}
   }
 
-  // تنظيف تلقائي للبيانات وإزالة أي مشتركين وهميين
+  // تنظيف وتطبيع تلقائي للبيانات وإزالة أي مشتركين وهميين
   if (data && data.gam3eyat) {
+    normalizeGamData(data);
     let modified = false;
 
     // 1. مزامنة فورية لحالات الشهور مع التقويم الحقيقي لجميع الجمعيات
@@ -588,6 +620,7 @@ function loadData(targetUid) {
     }
   }
 
+  normalizeGamData(data);
   return data;
 }
 
