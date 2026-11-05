@@ -428,6 +428,12 @@ const FirebaseService = {
       console.warn("تعذر الحفظ المحلي لبيانات المدير:", e);
     }
 
+    // الجلسات الافتراضية غير المسجلة دخول نكتفي بحفظها محلياً ولا نرسلها للسحابة أبداً منعاً لتلويث بيانات السحابة
+    const curUser = this.getCurrentUser();
+    if (uid === "admin_default" && !curUser) {
+      return true;
+    }
+
     if (window.isFirebaseConfigured && window.isFirebaseConfigured()) {
       try {
         cleanData.lastUpdated = firebase.firestore.FieldValue.serverTimestamp();
@@ -436,8 +442,18 @@ const FirebaseService = {
           firebaseDb.collection("managers").doc(uid).collection("data").doc("current").set(cleanData, { merge: true })
         ];
 
-        // تحديث السحابة العامة active_statement دائماً لضمان أن كشوفات المشتركين وروابط الواتساب تعرض أحدث البيانات فوراً
-        writes.push(firebaseDb.collection("public_data").doc("active_statement").set(cleanData, { merge: true }));
+        // حماية صارمة للسحابة العامة active_statement:
+        // لا يتم تحديثها إلا حصراً من حساب المدير الرئيسي المعتمد فقط (medogamal750@gmail.com)
+        // ومستحيل نهائياً أن تُعدل من admin_default أو أي مستخدم تجريبي أو زائر غير مسجل
+        const isMasterAdmin = (uid === "CbVrUQlb2pOBZrU6n70MLcG55JN2") ||
+                              (cleanData.managerInfo && cleanData.managerInfo.email === "medogamal750@gmail.com") ||
+                              (curUser && (curUser.email === "medogamal750@gmail.com" || curUser.uid === "CbVrUQlb2pOBZrU6n70MLcG55JN2"));
+        const isNotDefault = uid !== "admin_default";
+        const hasValidGams = cleanData.gam3eyat && Array.isArray(cleanData.gam3eyat) && cleanData.gam3eyat.length > 0;
+
+        if (isMasterAdmin && isNotDefault && hasValidGams) {
+          writes.push(firebaseDb.collection("public_data").doc("active_statement").set(cleanData, { merge: true }));
+        }
 
         await Promise.race([
           Promise.all(writes),
@@ -479,10 +495,18 @@ const FirebaseService = {
   async fetchMemberStatementFromCloud(managerUid, phone, pin) {
     let managerData = null;
 
-    if (managerUid) {
+    if (managerUid && managerUid !== "admin_default") {
       managerData = await this.getManagerData(managerUid);
     }
 
+    // إذا لم يحدد الرابط معرف مدير معين، نأتي ببيانات المدير الرئيسي السحابية المباشرة أولاً
+    if (!managerData && window.isFirebaseConfigured && window.isFirebaseConfigured()) {
+      try {
+        managerData = await this.getManagerData("CbVrUQlb2pOBZrU6n70MLcG55JN2");
+      } catch (e) {}
+    }
+
+    // في حال تعذر ذلك، نقرأ من الكشف العام المعتمد
     if (!managerData && window.isFirebaseConfigured && window.isFirebaseConfigured()) {
       try {
         const publicSnap = await Promise.race([

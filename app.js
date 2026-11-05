@@ -7,7 +7,7 @@
  * 4. تصميم مالي أنيق وتفاعلي يدعم الأسهم المشتركة وإعادة ترتيب الأدوار.
  */
 
-const STORAGE_KEY = "gam3eyat_app_data_v3_4";
+const STORAGE_KEY = "gam3eyat_app_data_v4_3";
 
 // الشهور القياسية الـ 12
 const ALL_MONTHS_DEF = [
@@ -270,6 +270,21 @@ function syncMonthPaymentStatuses(gam, monthKey) {
     if (m.isVacant) return;
     if (m.payments) {
       gam.months.forEach((mo, mIdx) => {
+        // تثبيت وحماية شهر أكتوبر 2026 المنتهي:
+        // أكتوبر مسدد بالكامل لكافة المشتركين (paid) وقبض لأصحاب الدور (payout) ولا يتحول لمتأخر نهائياً
+        if (mo.key === "oct") {
+          const isOctTurn = (m.turnMonth === "oct") || 
+                            (gam.id === "gam1" && m.turn === 10) || 
+                            (gam.id === "gam2" && m.turn === 5);
+          if (isOctTurn) {
+            m.payments[mo.key] = ["payout"];
+          } else {
+            const count = m.isShared ? 2 : 1;
+            m.payments[mo.key] = Array(count).fill("paid");
+          }
+          return;
+        }
+
         if (!m.payments[mo.key]) {
           const count = m.isShared ? 2 : 1;
           m.payments[mo.key] = Array(count).fill(mIdx <= curMonthIdx ? "unpaid" : "future");
@@ -424,9 +439,20 @@ function loadData(targetUid) {
 
   let data = null;
 
-  // تنظيف المفاتيح السابقة القديمة لضمان عدم بقاء أي بيانات غير محدثة
+  // تنظيف المفاتيح السابقة القديمة لضمان عدم بقاء أي بيانات غير محدثة أو كاش قديم
   try {
-    const oldKeys = ["gam3eyat_app_data", "gam3eyat_app_data_v2", "gam3eyat_app_data_v2_5", "gam3eyat_app_data_v3", "gam3eyat_app_data_v3_2", "gam3eyat_app_data_v3_3"];
+    const oldKeys = [
+      "gam3eyat_app_data", 
+      "gam3eyat_app_data_v2", 
+      "gam3eyat_app_data_v2_5", 
+      "gam3eyat_app_data_v3", 
+      "gam3eyat_app_data_v3_2", 
+      "gam3eyat_app_data_v3_3", 
+      "gam3eyat_app_data_v3_4", 
+      "gam3eyat_app_data_v4_0", 
+      "gam3eyat_app_data_v4_1", 
+      "gam3eyat_app_data_v4_2"
+    ];
     oldKeys.forEach(k => localStorage.removeItem(k));
   } catch (e) {}
 
@@ -567,9 +593,19 @@ function loadData(targetUid) {
 
 function saveData(dataToSave) {
   const curUser = (typeof FirebaseService !== "undefined" && FirebaseService.getCurrentUser) ? FirebaseService.getCurrentUser() : null;
-  const activeUid = (appState && appState.currentManager && appState.currentManager.uid) || (curUser && curUser.uid) || "CbVrUQlb2pOBZrU6n70MLcG55JN2";
+  const isMasterAuthed = curUser && (curUser.email === "medogamal750@gmail.com" || curUser.uid === "CbVrUQlb2pOBZrU6n70MLcG55JN2");
+  const activeUid = (appState && appState.currentManager && appState.currentManager.uid) || (curUser && curUser.uid);
+
+  // إذا لم يكن هناك مدير مسجل الدخول، نحفظ محلياً فقط ولا نرسل شيئاً للسحابة إطلاقاً
+  if (!activeUid) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+    } catch (e) {}
+    return;
+  }
+
   const activeEmail = (appState && appState.currentManager && appState.currentManager.email) ? appState.currentManager.email.toLowerCase() : ((curUser && curUser.email) ? curUser.email.toLowerCase() : "");
-  const isMaster = activeUid === "CbVrUQlb2pOBZrU6n70MLcG55JN2" || activeUid === "admin_default" || activeEmail === "medogamal750@gmail.com";
+  const isMaster = activeUid === "CbVrUQlb2pOBZrU6n70MLcG55JN2" || activeEmail === "medogamal750@gmail.com";
 
   // 1. الحفظ المحلي التلقائي المعزول والشامل
   try {
@@ -579,11 +615,13 @@ function saveData(dataToSave) {
     }
   } catch (e) {}
 
-  // 2. المزامنة السحابية الفورية في Google Cloud Firestore
+  // 2. المزامنة السحابية الفورية في Google Cloud Firestore (فقط للمدراء المسجلين حقيقياً)
   if (typeof FirebaseService !== "undefined" && window.isFirebaseConfigured && window.isFirebaseConfigured()) {
-    FirebaseService.saveManagerData(activeUid, dataToSave).catch(err => {
-      console.warn("خطأ في المزامنة السحابية التلقائية:", err);
-    });
+    if (activeUid !== "admin_default" || isMasterAuthed) {
+      FirebaseService.saveManagerData(activeUid, dataToSave).catch(err => {
+        console.warn("خطأ في المزامنة السحابية التلقائية:", err);
+      });
+    }
   }
 }
 
@@ -848,20 +886,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     })();
   }
 
-  // المزامنة التلقائية مع السحابة لضمان نشر الجمعيات الحالية فوراً للمشتركين إذا كان المدير متصلاً
-  if (typeof FirebaseService !== "undefined" && window.isFirebaseConfigured && window.isFirebaseConfigured()) {
-    setTimeout(async () => {
-      try {
-        if (appState && appState.currentManager && appData && appData.gam3eyat && appData.gam3eyat.length > 0) {
-          const activeUid = appState.currentManager.uid || "admin_default";
-          await FirebaseService.saveManagerData(activeUid, appData);
-          console.log("تم تحديث ومزامنة البيانات مع Google Cloud Firestore بنجاح!");
-        }
-      } catch (err) {
-        console.warn("تنبيه المزامنة التلقائية:", err);
-      }
-    }, 1200);
-  }
 });
 
 // ==========================================
